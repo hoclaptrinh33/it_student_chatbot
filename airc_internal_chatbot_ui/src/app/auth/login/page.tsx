@@ -71,19 +71,18 @@ export default function LoginPage() {
             <div className="max-w-md w-full">
                 <Card className="shadow-lg border-0">
                     <div className="text-center mb-6">
-                        {/* Logo AIRC */}
                         <div className="flex justify-center mb-4 relative h-16 w-full">
                             <Image
-                                src="/logo_airc.jpg"
-                                alt="AIRC Logo"
+                                src="/logo_fit.png"
+                                alt="Khoa CNTT"
                                 fill
                                 className="object-contain"
                                 priority
                                 sizes="(max-width: 768px) 100vw, 33vw"
                             />
                         </div>
-                        <Title level={2} style={{ color: '#c82b2b' }}>AIRC Internal Chatbot</Title>
-                        <Text type="secondary">Đăng nhập vào hệ thống nội bộ</Text>
+                        <Title level={2} style={{ color: '#0F4C81' }}>Cố vấn Học tập Khoa CNTT</Title>
+                        <Text type="secondary">Đăng nhập để được tư vấn lộ trình và tài liệu học tập</Text>
                     </div>
 
                     {(error || formError) && (
@@ -130,7 +129,7 @@ export default function LoginPage() {
                                 <Form.Item name="remember" valuePropName="checked" noStyle>
                                     <Checkbox>Ghi nhớ đăng nhập</Checkbox>
                                 </Form.Item>
-                                <Link href="/auth/forgot-password" style={{ color: '#c61a1a' }}>
+                                <Link href="/auth/forgot-password" style={{ color: '#0D9488' }}>
                                     Quên mật khẩu?
                                 </Link>
                             </div>
@@ -144,7 +143,7 @@ export default function LoginPage() {
 
                         <div className="text-center mt-4">
                             <Text>Chưa có tài khoản? </Text>
-                            <Link href="/auth/register" style={{ color: '#c61a1a', fontWeight: 500 }}>
+                            <Link href="/auth/register" style={{ color: '#0D9488', fontWeight: 500 }}>
                                 Đăng ký ngay
                             </Link>
                         </div>

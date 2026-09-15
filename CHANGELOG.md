@@ -45,7 +45,12 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | `VectorService.search` filter `course_id` + `create_payload_index` keyword khi ensure collection | Đã làm |
 | Bind `POST /academic/materials` ghi `file_id` + `course_id` + `material_type` (+ `dataset_id`) | Đã làm |
 | Form API `course_id`/`material_type` trên `POST /files/upload` và `POST /datasets/{id}/files` | Đã làm |
-| UI dataset upload chọn môn + loại tài liệu (PR5) | Chưa làm |
+| UI dataset upload chọn môn + loại tài liệu (PR5) | Đã làm |
+| Tab sinh viên: Chat / Môn đủ ĐK / Bảng điểm / Tài liệu | Đã làm |
+| Trang `/dashboard/eligible-courses` (badge PREVIOUS mềm) và `/dashboard/transcript` (empty "chưa có bảng điểm") | Đã làm |
+| Trang `/dashboard/materials` lọc theo môn + `material_type` | Đã làm |
+| Admin CRUD môn + tiên quyết (`/admin/courses`); admin/GV nhập điểm + CSV (`/admin/grades`) | Đã làm |
+| Branding Khoa CNTT: navy `#0F4C81` + teal `#0D9488`, `FitLogo`, title cố vấn | Đã làm |
 
 ### Bug
 

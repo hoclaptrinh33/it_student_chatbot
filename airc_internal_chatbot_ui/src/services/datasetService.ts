@@ -60,8 +60,12 @@ const datasetService = {
     /**
      * Add files to dataset
      */
-    addFilesToDataset: async (datasetId: string, fileIds: string[]): Promise<Record<string, unknown>> => {
-        return await datasetRepository.addFilesToDataset(datasetId, fileIds);
+    addFilesToDataset: async (
+        datasetId: string,
+        fileIds: string[],
+        options?: { course_id?: string; material_type?: string },
+    ): Promise<Record<string, unknown>> => {
+        return await datasetRepository.addFilesToDataset(datasetId, fileIds, options);
     },
 
     /**

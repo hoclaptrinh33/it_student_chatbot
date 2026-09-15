@@ -30,8 +30,11 @@ const fileService = {
     /**
      * Upload file lên server
      */
-    uploadFile: async (file: File): Promise<FileUploadResponse> => {
-        return await fileRepository.uploadFile(file);
+    uploadFile: async (
+        file: File,
+        options?: { course_id?: string; material_type?: string },
+    ): Promise<FileUploadResponse> => {
+        return await fileRepository.uploadFile(file, options);
     },
 
     /**

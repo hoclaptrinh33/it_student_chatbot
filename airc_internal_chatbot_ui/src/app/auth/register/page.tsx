@@ -42,19 +42,18 @@ export default function RegisterPage() {
     return (
         <Card className="shadow-lg border-0">
             <div className="text-center mb-6">
-                {/* Logo AIRC */}
                 <div className="flex justify-center mb-4 relative h-16 w-full">
                     <Image
-                        src="/logo_airc.jpg"
-                        alt="AIRC Logo"
+                        src="/logo_fit.png"
+                        alt="Khoa CNTT"
                         fill
                         className="object-contain"
                         priority
                         sizes="(max-width: 768px) 100vw, 33vw"
                     />
                 </div>
-                <Title level={2} style={{ color: '#c82b2b' }}>Đăng Ký</Title>
-                <Text type="secondary">Tạo tài khoản mới</Text>
+                <Title level={2} style={{ color: '#0F4C81' }}>Đăng ký</Title>
+                <Text type="secondary">Tạo tài khoản sinh viên Khoa CNTT</Text>
             </div>
 
             {error && (
@@ -147,7 +146,7 @@ export default function RegisterPage() {
 
                 <div className="text-center mt-4">
                     <Text>Đã có tài khoản? </Text>
-                    <Link href="/auth/login" style={{ color: '#c61a1a', fontWeight: 500 }}>
+                    <Link href="/auth/login" style={{ color: '#0D9488', fontWeight: 500 }}>
                         Đăng nhập ngay
                     </Link>
                 </div>

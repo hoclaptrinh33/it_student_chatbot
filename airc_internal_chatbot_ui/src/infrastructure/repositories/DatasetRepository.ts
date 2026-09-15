@@ -36,8 +36,16 @@ export const datasetRepository: IDatasetRepository = {
         return response.data;
     },
 
-    async addFilesToDataset(datasetId: string, fileIds: string[]): Promise<Record<string, unknown>> {
-        const response = await coreClient.post(`/datasets/${datasetId}/files`, { file_ids: fileIds });
+    async addFilesToDataset(
+        datasetId: string,
+        fileIds: string[],
+        options?: { course_id?: string; material_type?: string },
+    ): Promise<Record<string, unknown>> {
+        const response = await coreClient.post(`/datasets/${datasetId}/files`, {
+            file_ids: fileIds,
+            course_id: options?.course_id,
+            material_type: options?.material_type,
+        });
         return response.data;
     },
 

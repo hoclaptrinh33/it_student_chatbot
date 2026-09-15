@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layout } from 'antd';
+import StudentNav from './StudentNav';
 
 const { Content } = Layout;
 
@@ -7,15 +8,11 @@ interface StudentLayoutProps {
     children: React.ReactNode;
 }
 
-/**
- * Layout rieng cho Student
- * Giong voi layout cu cua chatbot: Nav bar o tren, content o duoi
- */
 const StudentLayout: React.FC<StudentLayoutProps> = ({ children }) => {
     return (
-        <Layout className="min-h-screen bg-gray-50">
-            {/* StudentNav removed. Chat component handles its own header/logout */}
-            <Content className="p-0 h-screen">
+        <Layout className="h-screen bg-gray-50" style={{ display: 'flex', flexDirection: 'column' }}>
+            <StudentNav />
+            <Content className="p-0" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {children}
             </Content>
         </Layout>

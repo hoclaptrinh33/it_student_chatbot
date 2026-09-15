@@ -18,7 +18,7 @@ const { TextArea } = Input;
 const { Text } = Typography;
 
 /**
- * Component Chat cho Student/Teacher - Giao diện AIRC màu đỏ
+ * Component Chat cho Student — persona cố vấn Khoa CNTT
  */
 export default function StudentChat() {
     const { user } = useAuthStore();
@@ -158,7 +158,7 @@ export default function StudentChat() {
     // Show loading state
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="flex h-full items-center justify-center bg-gray-50">
                 <div className="text-center">
                     <Spin size="large" />
                     <p className="mt-4 text-gray-500">Đang tải chatbot...</p>
@@ -170,7 +170,7 @@ export default function StudentChat() {
     // Show error if no chatbot available for this user
     if (noChatbotAvailable || !selectedChatbot) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
+            <div className="flex h-full items-center justify-center bg-gray-50">
                 <div className="text-center max-w-md p-8">
                     <WarningOutlined className="text-6xl text-orange-400 mb-4" />
                     <h2 className="text-xl font-semibold text-gray-700 mb-2">Chưa có Chatbot</h2>
@@ -180,7 +180,6 @@ export default function StudentChat() {
                     </p>
                     <Button
                         type="primary"
-                        danger
                         onClick={() => {
                             // Reset to trigger reload
                             setSelectedChatbot(null);
@@ -196,22 +195,20 @@ export default function StudentChat() {
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-gray-50">
-            {/* Sidebar List Sessions - AIRC Red Theme */}
+        <div className="flex h-full overflow-hidden bg-gray-50">
             <div className="w-80 bg-white border-r border-gray-200 flex-col hidden md:flex">
-                {/* Header with AIRC branding */}
                 <div className="p-4 border-b border-gray-100 bg-white">
                     <div className="flex items-center gap-3">
                         <Image
-                            src="/logo_airc.jpg"
-                            alt="AIRC Logo"
+                            src="/logo_fit.png"
+                            alt="Khoa CNTT"
                             width={48}
                             height={48}
                             className="object-contain"
                         />
                         <div>
-                            <span className="text-lg font-bold text-red-700">AIRC Chat</span>
-                            <div className="text-xs text-gray-500">Key to Success</div>
+                            <span className="text-lg font-bold" style={{ color: '#0F4C81' }}>Cố vấn CNTT</span>
+                            <div className="text-xs text-gray-500">Khoa Công nghệ Thông tin</div>
                         </div>
                     </div>
                 </div>
@@ -234,7 +231,8 @@ export default function StudentChat() {
                         block
                         icon={<PlusOutlined />}
                         onClick={() => createSession('Cuộc trò chuyện mới')}
-                        className="h-10 bg-red-600 hover:bg-red-700 border-none rounded-lg"
+                        className="h-10 border-none rounded-lg"
+                        style={{ background: '#0F4C81' }}
                     >
                         Cuộc trò chuyện mới
                     </Button>
@@ -250,12 +248,12 @@ export default function StudentChat() {
                                 className={`
                                     group flex items-center gap-3 p-3 mb-1 rounded-lg cursor-pointer transition-all
                                     ${currentSessionId === item.id
-                                        ? 'bg-red-50 text-red-700 border border-red-200'
+                                        ? 'bg-[#E8F1F8] text-[#0F4C81] border border-[#0F4C81]/20'
                                         : 'hover:bg-gray-50 text-gray-700'}
                                 `}
                                 onClick={() => selectSession(item.id)}
                             >
-                                <MessageOutlined className={currentSessionId === item.id ? 'text-red-500' : 'text-gray-400'} />
+                                <MessageOutlined className={currentSessionId === item.id ? 'text-[#0F4C81]' : 'text-gray-400'} />
                                 <div className="flex-1 truncate font-medium text-sm">
                                     {item.name}
                                 </div>
@@ -279,7 +277,7 @@ export default function StudentChat() {
                         <Avatar
                             icon={<UserOutlined />}
                             src={user?.avatar_url}
-                            className="bg-red-500"
+                            style={{ background: '#0F4C81' }}
                         />
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate text-gray-800">
@@ -292,7 +290,7 @@ export default function StudentChat() {
                             icon={<LogoutOutlined />}
                             onClick={handleLogout}
                             title="Đăng xuất"
-                            className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                            className="text-gray-500 hover:text-[#0F4C81] hover:bg-[#E8F1F8]"
                         />
                     </div>
                 </div>
@@ -304,8 +302,8 @@ export default function StudentChat() {
                 <div className="h-14 border-b border-gray-100 flex items-center px-4 justify-between bg-white shadow-sm">
                     <div className="flex items-center gap-3">
                         <Image
-                            src="/logo_airc.jpg"
-                            alt="AIRC"
+                            src="/logo_fit.png"
+                            alt="Khoa CNTT"
                             width={32}
                             height={32}
                             className="object-contain md:hidden"
@@ -316,8 +314,8 @@ export default function StudentChat() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="hidden sm:inline text-xs text-white bg-red-500 px-2 py-1 rounded-full">
-                            Đã bật RAG
+                        <span className="hidden sm:inline text-xs text-white px-2 py-1 rounded-full" style={{ background: '#0D9488' }}>
+                            Cố vấn học tập
                         </span>
                         {/* Mobile Logout */}
                         <Button
@@ -338,10 +336,10 @@ export default function StudentChat() {
                             emptyHint={
                                 <div className="flex flex-col items-center text-center opacity-80">
                                     <div className="w-24 h-24 mb-6">
-                                        <Image src="/logo_airc.jpg" alt="AIRC Logo" width={96} height={96} className="object-contain" />
+                                        <Image src="/logo_fit.png" alt="Khoa CNTT" width={96} height={96} className="object-contain" />
                                     </div>
-                                    <h1 className="text-2xl font-bold mb-3 text-gray-800">Xin chào! Tôi là AIRC Assistant</h1>
-                                    <p className="text-gray-500 max-w-md">Hãy đặt câu hỏi về quy chế, đào tạo, hoặc bất kỳ vấn đề nào bạn cần hỗ trợ.</p>
+                                    <h1 className="text-2xl font-bold mb-3 text-gray-800">Xin chào! Tôi là Trợ lý Cố vấn Học tập Khoa CNTT</h1>
+                                    <p className="text-gray-500 max-w-md">Hỏi về môn đủ điều kiện, bảng điểm, lộ trình Web/AI, hoặc tài liệu học tập theo môn.</p>
                                 </div>
                             }
                         />
@@ -352,12 +350,12 @@ export default function StudentChat() {
                 {/* Input Area */}
                 <div className="p-4 bg-white border-t border-gray-100">
                     <div className="max-w-3xl mx-auto relative">
-                        <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-red-100 focus-within:border-red-400 transition-all">
+                        <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-teal-100 focus-within:border-[#0F4C81] transition-all">
                             <TextArea
                                 value={inputValue}
                                 onChange={e => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder={selectedChatbot ? "Nhập câu hỏi của bạn..." : "Đang tải chatbot..."}
+                                placeholder={selectedChatbot ? "Hỏi về môn đủ ĐK, học lại, lộ trình Web/AI..." : "Đang tải chatbot..."}
                                 autoSize={{ minRows: 1, maxRows: 6 }}
                                 className="border-none shadow-none bg-transparent text-[16px] px-3 py-2 focus:ring-0 focus:border-transparent"
                                 style={{ resize: 'none' }}
@@ -370,10 +368,10 @@ export default function StudentChat() {
                                     type="default"
                                     shape="circle"
                                     size="large"
-                                    icon={<AudioOutlined className="text-red-600" />}
+                                    icon={<AudioOutlined style={{ color: '#0F4C81' }} />}
                                     onClick={() => setIsLiveVoiceOpen(true)}
                                     disabled={loading || !selectedChatbot}
-                                    className="mb-0.5 border-gray-200 hover:border-red-400 flex items-center justify-center"
+                                    className="mb-0.5 border-gray-200 hover:border-[#0F4C81] flex items-center justify-center"
                                 />
                             </Tooltip>
                             <Button
@@ -385,14 +383,19 @@ export default function StudentChat() {
                                 disabled={!inputValue.trim() || loading || !selectedChatbot}
                                 className={`mb-0.5 mr-0.5 shadow-md flex items-center justify-center ${
                                     inputValue.trim() && !loading && selectedChatbot
-                                        ? 'bg-red-600 hover:bg-red-700 border-none text-white'
+                                        ? 'border-none text-white'
                                         : 'bg-gray-100 text-gray-400 border-none'
                                 }`}
+                                style={
+                                    inputValue.trim() && !loading && selectedChatbot
+                                        ? { background: '#0F4C81' }
+                                        : undefined
+                                }
                             />
                         </div>
                         <div className="text-center mt-2">
                             <Text type="secondary" className="text-xs">
-                                AIRC Assistant có thể mắc lỗi. Vui lòng kiểm tra lại thông tin quan trọng.
+                                Cố vấn dựa trên bảng điểm trong hệ thống. Vui lòng kiểm tra lại thông tin quan trọng.
                             </Text>
                         </div>
                     </div>

@@ -15,7 +15,7 @@ interface ChatTranscriptProps {
 }
 
 function toMarkdown(messages: ChatMessage[]): string {
-    const lines = ['# Phiên trò chuyện AIRC', ''];
+    const lines = ['# Phiên trò chuyện Cố vấn Khoa CNTT', ''];
     for (const msg of messages) {
         const who = msg.role === 'user' ? 'Người dùng' : 'Trợ lý';
         lines.push(`## ${who}`, '', msg.content || '', '');
@@ -59,7 +59,7 @@ export default function ChatTranscript({ getBranchesAt, emptyHint }: ChatTranscr
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `airc-chat-${currentSessionId || 'session'}.md`;
+        link.download = `cntt-advisor-${currentSessionId || 'session'}.md`;
         link.click();
         URL.revokeObjectURL(url);
     };

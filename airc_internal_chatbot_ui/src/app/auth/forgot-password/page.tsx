@@ -34,10 +34,10 @@ export default function ForgotPasswordPage() {
         <Card className="shadow-lg border-0">
             <div className="text-center mb-6">
                 <div className="flex justify-center mb-4 relative h-16 w-full">
-                    <Image src="/logo_airc.jpg" alt="AIRC Logo" fill className="object-contain" />
+                    <Image src="/logo_fit.png" alt="Khoa CNTT" fill className="object-contain" />
                 </div>
-                <Title level={3} style={{ color: '#c82b2b' }}>Quên mật khẩu</Title>
-                <Text type="secondary">Nhập email để nhận liên kết đặt lại mật khẩu</Text>
+                <Title level={3} style={{ color: '#0F4C81' }}>Quên mật khẩu</Title>
+                <Text type="secondary">Nhập email tài khoản Khoa CNTT để nhận liên kết đặt lại mật khẩu</Text>
             </div>
 
             {error && <Alert type="error" showIcon className="mb-4" message={error} />}
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
             </Form>
 
             <div className="text-center">
-                <Link href="/auth/login" style={{ color: '#c61a1a' }}>Quay lại đăng nhập</Link>
+                <Link href="/auth/login" style={{ color: '#0D9488' }}>Quay lại đăng nhập</Link>
             </div>
         </Card>
     );

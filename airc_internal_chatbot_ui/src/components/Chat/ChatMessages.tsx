@@ -46,13 +46,13 @@ export default function ChatMessages({ messages, isTyping }: ChatMessagesProps) 
             {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400">
                     <div className="mb-4">
-                        <Image src="/logo_airc.jpg" alt="AIRC Logo" width={120} height={120} className="rounded-full" />
+                        <Image src="/logo_fit.png" alt="Khoa CNTT" width={120} height={120} className="rounded-full" />
                     </div>
                     <Text type="secondary" className="text-lg">
-                        Bắt đầu trò chuyện với AIRC Assistant
+                        Bắt đầu trò chuyện với Cố vấn Học tập Khoa CNTT
                     </Text>
                     <Text type="secondary" className="text-sm">
-                        Chọn dataset bên trái và đặt câu hỏi.
+                        Hỏi về môn đủ điều kiện, bảng điểm, hoặc tài liệu học tập.
                     </Text>
                 </div>
             )}
@@ -74,7 +74,7 @@ export default function ChatMessages({ messages, isTyping }: ChatMessagesProps) 
                             />
                         ) : (
                             <Avatar
-                                src="/logo_airc.jpg"
+                                src="/logo_fit.png"
                                 style={{
                                     flexShrink: 0,
                                     backgroundColor: 'white'
@@ -112,7 +112,7 @@ export default function ChatMessages({ messages, isTyping }: ChatMessagesProps) 
                 <div className="flex justify-start">
                     <div className="flex items-start gap-3">
                         <Avatar
-                            src="/logo_airc.jpg"
+                            src="/logo_fit.png"
                             style={{ backgroundColor: 'white' }}
                         />
                         <div className="bg-white p-4 rounded-lg rounded-tl-none border border-gray-100 shadow-sm">

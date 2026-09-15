@@ -127,12 +127,11 @@ export default function ChatPage() {
 
                 {/* Main Chat Area */}
                 <div className="flex-1 flex flex-col h-full bg-white">
-                    {/* Header with AIRC Logo */}
                     <div className="p-4 border-b flex justify-between items-center bg-white rounded-t-lg">
                         <Space>
                             <Image
-                                src="/logo_airc.jpg"
-                                alt="AIRC Logo"
+                                src="/logo_fit.png"
+                                alt="Khoa CNTT"
                                 width={48}
                                 height={48}
                                 className="object-contain"
@@ -156,7 +155,7 @@ export default function ChatPage() {
                                     </Space>
                                 ) : (
                                     <Title level={5} className="mb-0">
-                                        {currentChatbot?.name || "Trợ lý AI AIRC"}
+                                        {currentChatbot?.name || "Cố vấn Học tập Khoa CNTT"}
                                     </Title>
                                 )}
                             </div>
@@ -170,10 +169,10 @@ export default function ChatPage() {
                             emptyHint={
                                 <div className="flex flex-col items-center">
                                     <div className="w-24 h-24 mb-6">
-                                        <Image src="/logo_airc.jpg" alt="AIRC Logo" width={96} height={96} className="object-contain" />
+                                        <Image src="/logo_fit.png" alt="Khoa CNTT" width={96} height={96} className="object-contain" />
                                     </div>
-                                    <Title level={4} style={{ color: '#bfbfbf' }}>Bắt đầu trò chuyện</Title>
-                                    <Text type="secondary">Đặt câu hỏi về quy chế, đào tạo, hoặc bất kỳ vấn đề nào.</Text>
+                                    <Title level={4} style={{ color: '#bfbfbf' }}>Trợ lý Cố vấn Học tập Khoa CNTT</Title>
+                                    <Text type="secondary">Hỏi về môn đủ điều kiện, bảng điểm, lộ trình, hoặc tài liệu học tập.</Text>
                                 </div>
                             }
                         />
@@ -183,12 +182,12 @@ export default function ChatPage() {
                     {/* Input Area */}
                     <div className="p-4 bg-white border-t border-gray-100">
                         <div className="max-w-3xl mx-auto relative">
-                            <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-red-100 focus-within:border-red-400 transition-all">
+                            <div className="flex gap-2 items-end bg-white border border-gray-200 rounded-2xl p-2 shadow-sm focus-within:ring-2 focus-within:ring-teal-100 focus-within:border-[#0F4C81] transition-all">
                                 <TextArea
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyPress}
-                                    placeholder="Nhập câu hỏi của bạn ở đây..."
+                                    placeholder="Hỏi về môn đủ ĐK, học lại, lộ trình Web/AI..."
                                     autoSize={{ minRows: 1, maxRows: 6 }}
                                     className="border-none shadow-none bg-transparent text-[16px] px-3 py-2 focus:ring-0 focus:border-transparent"
                                     style={{ resize: 'none' }}
@@ -201,10 +200,10 @@ export default function ChatPage() {
                                         type="default"
                                         shape="circle"
                                         size="large"
-                                        icon={<AudioOutlined className="text-red-600" />}
+                                        icon={<AudioOutlined style={{ color: '#0F4C81' }} />}
                                         onClick={() => setIsLiveVoiceOpen(true)}
                                         disabled={chatLoading || !chatbotId}
-                                        className="mb-0.5 border-gray-200 hover:border-red-400 flex items-center justify-center"
+                                        className="mb-0.5 border-gray-200 hover:border-[#0F4C81] flex items-center justify-center"
                                     />
                                 </Tooltip>
                                 <Button
@@ -217,13 +216,14 @@ export default function ChatPage() {
                                     loading={chatLoading}
                                     className={`mb-0.5 mr-0.5 shadow-md flex items-center justify-center ${
                                         input.trim() && !chatLoading
-                                            ? 'bg-red-600 hover:bg-red-700 border-none text-white'
+                                            ? 'border-none text-white'
                                             : 'bg-gray-100 text-gray-400 border-none'
                                     }`}
+                                    style={input.trim() && !chatLoading ? { background: '#0F4C81' } : undefined}
                                 />
                             </div>
                             <div className="mt-2 text-xs text-gray-400 text-center">
-                                AIRC Assistant có thể mắc lỗi. Vui lòng kiểm tra lại thông tin quan trọng.
+                                Cố vấn dựa trên bảng điểm trong hệ thống. Vui lòng kiểm tra lại thông tin quan trọng.
                             </div>
                         </div>
                     </div>

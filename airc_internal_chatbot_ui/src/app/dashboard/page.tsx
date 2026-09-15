@@ -108,8 +108,8 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4 mb-2">
                     <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md">
                         <Image
-                            src="/logo_airc.jpg"
-                            alt="AIRC"
+                            src="/logo_fit.png"
+                            alt="Khoa CNTT"
                             width={56}
                             height={56}
                             className="object-cover"
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                             Xin chào, {mounted ? (user?.full_name || 'Quản trị viên') : 'Quản trị viên'}!
                         </Title>
                         <Text type="secondary" style={{ fontSize: 15 }}>
-                            Chào mừng bạn đến với hệ thống AIRC Internal Chatbot
+                            Chào mừng bạn đến với hệ thống Cố vấn Học tập Khoa CNTT
                         </Text>
                     </div>
                 </div>

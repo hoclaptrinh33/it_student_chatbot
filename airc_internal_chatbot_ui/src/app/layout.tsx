@@ -8,8 +8,8 @@ import theme from '@/theme/themeConfig';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AIRC Internal Chatbot",
-  description: "Internal Chatbot for AIRC",
+  title: "Cố vấn Học tập Khoa CNTT",
+  description: "Chatbot cố vấn học tập và tài liệu Khoa Công nghệ Thông tin",
 };
 
 export default function RootLayout({

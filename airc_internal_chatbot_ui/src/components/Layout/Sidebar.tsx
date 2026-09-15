@@ -11,10 +11,12 @@ import {
     RobotOutlined,
     SettingOutlined,
     MenuFoldOutlined,
-    MenuUnfoldOutlined
+    MenuUnfoldOutlined,
+    BookOutlined,
+    FormOutlined,
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
-import AIRCLogo from '../Common/AIRCLogo';
+import FitLogo from '../Common/FitLogo';
 import useAuthStore from '@/stores/authStore';
 
 const { Sider } = Layout;
@@ -76,6 +78,16 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
                     label: 'Chatbots',
                 },
                 {
+                    key: '/admin/courses',
+                    icon: <BookOutlined />,
+                    label: 'Môn học',
+                },
+                {
+                    key: '/admin/grades',
+                    icon: <FormOutlined />,
+                    label: 'Bảng điểm',
+                },
+                {
                     key: '/dashboard/datasets',
                     icon: <DatabaseOutlined />,
                     label: 'Bộ dữ liệu',
@@ -95,6 +107,11 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
                     key: '/dashboard/datasets',
                     icon: <DatabaseOutlined />,
                     label: 'Bộ dữ liệu',
+                },
+                {
+                    key: '/admin/grades',
+                    icon: <FormOutlined />,
+                    label: 'Nhập điểm',
                 }
             );
         }
@@ -124,7 +141,7 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
                 flexDirection: 'column'
             }}
         >
-            <AIRCLogo collapsed={collapsed} />
+            <FitLogo collapsed={collapsed} />
 
             <Menu
                 mode="inline"

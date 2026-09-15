@@ -43,10 +43,10 @@ function ResetPasswordForm() {
         <Card className="shadow-lg border-0">
             <div className="text-center mb-6">
                 <div className="flex justify-center mb-4 relative h-16 w-full">
-                    <Image src="/logo_airc.jpg" alt="AIRC Logo" fill className="object-contain" />
+                    <Image src="/logo_fit.png" alt="Khoa CNTT" fill className="object-contain" />
                 </div>
-                <Title level={3} style={{ color: '#c82b2b' }}>Đặt lại mật khẩu</Title>
-                <Text type="secondary">Nhập mật khẩu mới cho tài khoản của bạn</Text>
+                <Title level={3} style={{ color: '#0F4C81' }}>Đặt lại mật khẩu</Title>
+                <Text type="secondary">Nhập mật khẩu mới cho tài khoản Khoa CNTT</Text>
             </div>
 
             {!token && (
@@ -92,7 +92,7 @@ function ResetPasswordForm() {
             </Form>
 
             <div className="text-center">
-                <Link href="/auth/login" style={{ color: '#c61a1a' }}>Quay lại đăng nhập</Link>
+                <Link href="/auth/login" style={{ color: '#0D9488' }}>Quay lại đăng nhập</Link>
             </div>
         </Card>
     );

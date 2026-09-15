@@ -54,6 +54,7 @@ export interface User {
     is_active: boolean;
     avatar_url?: string;
     department?: string;
+    student_code?: string;
     created_at: string;
     updated_at?: string;
 }

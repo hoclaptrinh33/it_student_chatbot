@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Table, Button, Input, Switch, Tooltip, Modal, Tag, notification } from 'antd';
+import { Table, Button, Input, Switch, Tooltip, Modal, Tag, notification, Select } from 'antd';
 import { EyeOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, LoadingOutlined, DownloadOutlined } from '@ant-design/icons';
 import { DatasetFile } from '@/core/entities/Dataset';
 import datasetService from '@/services/datasetService';
 import fileService from '@/services/fileService';
+import courseService, { Course } from '@/services/courseService';
+import { MATERIAL_TYPES, MATERIAL_TYPE_LABELS } from '@/services/academicService';
 import dayjs from 'dayjs';
 
 interface KnowledgeBaseTabProps {
@@ -27,6 +29,9 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
     const [availableFiles, setAvailableFiles] = useState<any[]>([]); // Tất cả các file có sẵn trong thư viện
     const [selectedFilesToAdd, setSelectedFilesToAdd] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [bindCourseId, setBindCourseId] = useState<string | undefined>();
+    const [bindMaterialType, setBindMaterialType] = useState<string | undefined>();
 
     // File Input Ref
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,6 +111,12 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
     const handleAddFilesOpen = async () => {
         setIsAddFileModalOpen(true);
         try {
+            const courseList = await courseService.listCourses();
+            setCourses(courseList);
+        } catch (error) {
+            console.error('Failed to load courses', error);
+        }
+        try {
             const allFiles = await fileService.getFiles();
             console.log('[KnowledgeBase] All files from API:', allFiles);
 
@@ -123,7 +134,10 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
 
     const handleAddFilesSubmit = async () => {
         try {
-            await datasetService.addFilesToDataset(datasetId, selectedFilesToAdd);
+            await datasetService.addFilesToDataset(datasetId, selectedFilesToAdd, {
+                course_id: bindCourseId,
+                material_type: bindMaterialType,
+            });
             setIsAddFileModalOpen(false);
             setSelectedFilesToAdd([]);
             fetchFiles();
@@ -151,7 +165,10 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
         // Upload song song các file được chọn lên thư viện
         const uploadPromises = Array.from(selectedFiles).map(async (file) => {
             try {
-                const uploaded = await fileService.uploadFile(file);
+                const uploaded = await fileService.uploadFile(file, {
+                    course_id: bindCourseId,
+                    material_type: bindMaterialType,
+                });
                 uploadedFiles.push(uploaded);
             } catch (err) {
                 console.error(`Upload failed for ${file.name}`, err);
@@ -363,9 +380,33 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
                 cancelText="Hủy"
                 okButtonProps={{ disabled: selectedFilesToAdd.length === 0, className: 'bg-black' }}
             >
-                <div className="flex justify-between items-center mb-4">
-                    <p className="text-gray-500">Chọn tài liệu sẵn có trong thư viện hoặc tải lên tệp mới từ máy tính.</p>
-                    <div>
+                <div className="flex flex-col gap-3 mb-4">
+                    <p className="text-gray-500 mb-0">Chọn tài liệu sẵn có trong thư viện hoặc tải lên tệp mới từ máy tính.</p>
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <Select
+                            allowClear
+                            showSearch
+                            optionFilterProp="label"
+                            placeholder="Gắn môn học"
+                            className="min-w-[220px]"
+                            value={bindCourseId}
+                            onChange={setBindCourseId}
+                            options={courses.map((c) => ({
+                                value: c.id,
+                                label: `${c.course_code} · ${c.course_name}`,
+                            }))}
+                        />
+                        <Select
+                            allowClear
+                            placeholder="Loại tài liệu"
+                            className="min-w-[160px]"
+                            value={bindMaterialType}
+                            onChange={setBindMaterialType}
+                            options={MATERIAL_TYPES.map((type) => ({
+                                value: type,
+                                label: MATERIAL_TYPE_LABELS[type],
+                            }))}
+                        />
                         <input
                             type="file"
                             ref={fileInputRef}

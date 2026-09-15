@@ -9,7 +9,11 @@ export interface IDatasetRepository {
     shareDataset(id: string, payload: { all_students?: boolean; student_ids?: string[] }): Promise<Record<string, unknown>>;
 
     // Files
-    addFilesToDataset(datasetId: string, fileIds: string[]): Promise<Record<string, unknown>>;
+    addFilesToDataset(
+        datasetId: string,
+        fileIds: string[],
+        options?: { course_id?: string; material_type?: string },
+    ): Promise<Record<string, unknown>>;
     getDatasetFiles(datasetId: string): Promise<DatasetFile[]>;
     deleteDatasetFile(datasetId: string, fileId: string): Promise<void>;
     toggleDatasetFile(datasetId: string, fileId: string, isEnabled: boolean): Promise<boolean>;
