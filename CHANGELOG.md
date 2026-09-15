@@ -51,6 +51,9 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | Trang `/dashboard/materials` lọc theo môn + `material_type` | Đã làm |
 | Admin CRUD môn + tiên quyết (`/admin/courses`); admin/GV nhập điểm + CSV (`/admin/grades`) | Đã làm |
 | Branding Khoa CNTT: navy `#0F4C81` + teal `#0D9488`, `FitLogo`, title cố vấn | Đã làm |
+| Seed persona demo SV_WEB / SV_AI / SV_NEW (`Pass123`) — `migrations/005_seed_demo_personas.sql` + `init_db.sql` | Đã làm |
+| PDF mẫu INT1101 / INT1203 / INT2104 / INT2202 + script ingest bind dataset `dddddddd-…` | Đã làm |
+| Checklist demo hội đồng `document/DEMO_CHECKLIST.md` | Đã làm |
 
 ### Bug
 

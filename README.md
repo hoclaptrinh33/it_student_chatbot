@@ -80,12 +80,16 @@ Nếu bạn có toàn bộ source code trong thư mục cha `airc_internal_chatb
    docker-compose up -d --build
    ```
 
-   Volume Postgres mới chạy `init_db.sql`. Volume cũ cần delta RAG + quyền học vụ:
+   Volume Postgres mới chạy `init_db.sql`. Volume cũ cần delta RAG + quyền học vụ + persona demo:
 
    ```bash
    psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/002_align_rag_schema.sql
    psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/003_academic_permissions.sql
+   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/004_enable_academic_facts.sql
+   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/005_seed_demo_personas.sql
    ```
+
+   `005_seed_demo_personas.sql` thêm SV_WEB / SV_AI / SV_NEW (`Pass123`). Checklist hội đồng: [`document/DEMO_CHECKLIST.md`](document/DEMO_CHECKLIST.md).
 3. **Truy cập:**
 
    - Frontend: `http://localhost:3000`
