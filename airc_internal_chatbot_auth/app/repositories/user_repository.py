@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.models.orm import Role, User, UserRole
@@ -16,13 +16,16 @@ class UserRepository(BaseRepository):
     """Repository cho User operations"""
 
     def __init__(self, session):
-        super().__init__(session, User)
+        super().__init__(session)
 
-    async def _upsert_user_role(self, user_id: UUID, role_code: str) -> None:
+    async def _replace_user_role(self, user_id: UUID, role_code: str) -> None:
         result = await self.session.execute(select(Role).where(Role.code == role_code))
         role = result.scalar_one_or_none()
         if not role:
             return
+        await self.session.execute(
+            delete(UserRole).where(UserRole.user_id == user_id, UserRole.role_id != role.id)
+        )
         stmt = (
             pg_insert(UserRole)
             .values(user_id=user_id, role_id=role.id, assigned_at=datetime.utcnow())
@@ -51,7 +54,7 @@ class UserRepository(BaseRepository):
         )
         self.session.add(user)
         await self.session.flush()
-        await self._upsert_user_role(user.id, role)
+        await self._replace_user_role(user.id, role)
         return self.serialize_row(user)
 
     async def get_by_id(self, user_id: str) -> Optional[dict]:
@@ -85,7 +88,7 @@ class UserRepository(BaseRepository):
             if hasattr(user, key):
                 setattr(user, key, value)
         if role_code:
-            await self._upsert_user_role(uid, role_code)
+            await self._replace_user_role(uid, role_code)
         await self.session.flush()
         return True
 

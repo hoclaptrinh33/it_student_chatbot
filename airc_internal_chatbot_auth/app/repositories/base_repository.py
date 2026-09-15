@@ -12,9 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class BaseRepository:
     """Base repository with UUID helpers. Repositories return dicts with id: str."""
 
-    def __init__(self, session: AsyncSession, model: type | None = None):
+    def __init__(self, session: AsyncSession):
         self.session = session
-        self.model = model
 
     @staticmethod
     def parse_id(id_str: str) -> Optional[UUID]:

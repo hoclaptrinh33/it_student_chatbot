@@ -17,7 +17,6 @@ class SystemSettingsRepository:
     def _flatten(self, row: SystemSetting) -> dict:
         data = dict(row.config or {})
         data["id"] = row.id
-        data["_id"] = row.id
         data["updated_at"] = row.updated_at
         return BaseRepository.serialize_row(data)
 

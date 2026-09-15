@@ -15,7 +15,7 @@ class DatasetFileRepository(BaseRepository):
     """Repository cho DatasetFile operations"""
 
     def __init__(self, session):
-        super().__init__(session, DatasetFile)
+        super().__init__(session)
 
     async def create_dataset_file(self, dataset_id: str, file_id: str) -> dict:
         ds_id = self.parse_id(dataset_id)

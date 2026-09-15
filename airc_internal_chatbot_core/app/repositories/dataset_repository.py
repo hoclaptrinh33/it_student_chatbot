@@ -14,7 +14,7 @@ class DatasetRepository(BaseRepository):
     """Repository cho Dataset operations"""
 
     def __init__(self, session):
-        super().__init__(session, Dataset)
+        super().__init__(session)
 
     async def create_dataset(
         self,

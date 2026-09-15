@@ -1,6 +1,5 @@
-"""SQLAlchemy 2.0 mappings for Core RAG + academic tables. Schema source of truth is init_db.sql."""
+"""SQLAlchemy 2.0 mappings for Core RAG tables. Schema source of truth is init_db.sql."""
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
@@ -10,7 +9,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
-    Numeric,
     String,
     Text,
     Uuid,
@@ -21,78 +19,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
-
-
-class User(Base):
-    """Read mapping for users. Core must not write passwords."""
-    __tablename__ = "users"
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(50), nullable=False, default="student")
-    student_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    department: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-
-
-class Course(Base):
-    __tablename__ = "courses"
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    course_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    course_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    credits: Mapped[int] = mapped_column(Integer, nullable=False)
-    theory_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    practice_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    semester: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    is_mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    career_track: Mapped[str] = mapped_column(String(50), nullable=False, default="GENERAL")
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-
-
-class CoursePrerequisite(Base):
-    __tablename__ = "course_prerequisites"
-
-    course_id: Mapped[UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), primary_key=True
-    )
-    prerequisite_course_id: Mapped[UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), primary_key=True
-    )
-    relation_type: Mapped[str] = mapped_column(String(20), primary_key=True)
-
-
-class StudentRecord(Base):
-    __tablename__ = "student_records"
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    course_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="RESTRICT"), nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False)
-    grade: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 2), nullable=True)
-    semester_taken: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-
-
-class LearningMaterial(Base):
-    __tablename__ = "learning_materials"
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    course_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    material_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    file_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    qdrant_point_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    file_id: Mapped[Optional[UUID]] = mapped_column(Uuid(as_uuid=True), ForeignKey("files.id", ondelete="SET NULL"), nullable=True)
-    dataset_id: Mapped[Optional[UUID]] = mapped_column(Uuid(as_uuid=True), ForeignKey("datasets.id", ondelete="SET NULL"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
 
 class Dataset(Base):

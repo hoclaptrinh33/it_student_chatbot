@@ -12,12 +12,10 @@ from app.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
-_EXTRA_KEYS = {"latency_ms", "cached", "no_context", "feedback", "feedback_at", "feedback_comment"}
-
 
 class SessionRepository(BaseRepository):
     def __init__(self, session):
-        super().__init__(session, Session)
+        super().__init__(session)
 
     async def create_session(
         self,
@@ -113,13 +111,12 @@ class SessionRepository(BaseRepository):
             raise ValueError("session_id must be a UUID")
         extra = {k: v for k, v in (extra or {}).items() if v is not None}
         sources = extra.pop("sources", None)
-        extra_json = {k: v for k, v in extra.items() if k in _EXTRA_KEYS or k not in {"sources"}}
         row = Message(
             session_id=sid,
             role=role,
             content=content,
             sources=sources,
-            extra=extra_json,
+            extra=extra,
             created_at=datetime.utcnow(),
         )
         self.session.add(row)
@@ -193,12 +190,6 @@ class SessionRepository(BaseRepository):
                     created_at=datetime.utcnow(),
                 )
             )
-        extra = dict(msg.extra or {})
-        extra["feedback"] = rating
-        extra["feedback_at"] = datetime.utcnow().isoformat()
-        if comment is not None:
-            extra["feedback_comment"] = comment
-        msg.extra = extra
         await self.session.flush()
         return True
 

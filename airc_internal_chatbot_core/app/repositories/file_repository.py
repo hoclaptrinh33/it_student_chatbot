@@ -15,7 +15,7 @@ class FileRepository(BaseRepository):
     """Repository cho File operations"""
 
     def __init__(self, session):
-        super().__init__(session, File)
+        super().__init__(session)
 
     async def create_file(
         self,

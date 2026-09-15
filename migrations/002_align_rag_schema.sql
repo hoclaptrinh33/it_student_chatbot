@@ -2,7 +2,6 @@
 -- Fresh installs get the same columns from init_db.sql.
 -- Apply on an existing volume:
 --   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/002_align_rag_schema.sql
--- or: APPLY_SQL_MIGRATIONS=true (Core startup) / python migrations/apply.py
 
 ALTER TABLE sessions
     ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
@@ -37,7 +36,7 @@ ALTER TABLE learning_materials
     ADD COLUMN IF NOT EXISTS file_id UUID REFERENCES files(id) ON DELETE SET NULL,
     ADD COLUMN IF NOT EXISTS dataset_id UUID REFERENCES datasets(id) ON DELETE SET NULL;
 
--- PR1 must keep RAG-tight persona until AcademicFacts lands in PR3.
+-- Keep seed chatbot RAG-only until academic facts exist.
 UPDATE chatbots
 SET config = jsonb_set(
     jsonb_set(config, '{system_prompt}',

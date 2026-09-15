@@ -15,7 +15,7 @@ class ChatbotRepository(BaseRepository):
     """Repository cho Chatbot operations với RBAC"""
 
     def __init__(self, session):
-        super().__init__(session, Chatbot)
+        super().__init__(session)
 
     async def _dataset_ids_for(self, chatbot_id: UUID) -> List[str]:
         result = await self.session.execute(

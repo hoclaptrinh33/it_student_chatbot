@@ -52,15 +52,13 @@ class AuthService:
 
     async def login(self, email: str, password: str) -> Token:
         user = await self.user_repo.get_by_email(email)
-        print(f"DEBUG: Login attempt for {email}. Found user: {user is not None}", flush=True)
-
         if not user:
-            print(f"DEBUG: User {email} not found in DB", flush=True)
+            logger.debug("Login failed: unknown email")
             raise ValueError("Email không tồn tại trong hệ thống")
 
         is_valid = self.verify_password(password, user["hashed_password"])
         if not is_valid:
-            print(f"DEBUG: Login failed for {email}: Password mismatch", flush=True)
+            logger.debug("Login failed: password mismatch for user_id=%s", user["id"])
             raise ValueError("Mật khẩu không chính xác")
 
         if not user.get("is_active", True):

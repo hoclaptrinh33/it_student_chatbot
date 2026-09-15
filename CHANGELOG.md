@@ -15,6 +15,7 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | Worker ingest mở `SessionLocal` Postgres, commit sau `process_dataset_file` | Đã làm |
 | Delta RAG (`sessions` nhánh, `messages.extra`, cột parent-child `chunks`, `learning_materials.file_id`) trong `init_db.sql` + `migrations/002_align_rag_schema.sql` | Đã làm |
 | Seed chatbot `eeeeeeee-…` giữ persona RAG chặt (`no_context_behavior=reject`) đến PR3 | Đã làm |
+| Sửa dual-identity role, ingest commit ERROR, settings đọc cùng session | Đã sửa |
 | Live Voice Mode: STT (Web Speech) + TTS (Edge-TTS), modal live trên dashboard và student chat | Đã làm |
 | API `POST /api/v1/voice/tts` (voice allowlist, stream MP3, không log nội dung user) | Đã làm |
 | Hiện nguồn (citation) dưới câu trả lời; click mở file gốc; lưu sources khi reload session | Đã làm |

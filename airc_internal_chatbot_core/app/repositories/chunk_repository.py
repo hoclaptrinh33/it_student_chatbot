@@ -18,7 +18,7 @@ class ChunkRepository(BaseRepository):
     """Repository cho Chunk operations"""
 
     def __init__(self, session):
-        super().__init__(session, Chunk)
+        super().__init__(session)
 
     def _build_chunk(
         self,

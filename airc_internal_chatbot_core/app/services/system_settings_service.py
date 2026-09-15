@@ -92,8 +92,13 @@ class SystemSettingsService:
         self.repo = repo
 
     async def get_settings(self) -> SystemLLMSettingsResponse:
+        global _cache
         invalidate_llm_settings_cache()
-        effective = await get_effective_llm_settings()
+        doc = await self.repo.get_llm()
+        if not doc:
+            return to_public_response(_from_env())
+        effective = _from_doc(doc)
+        _cache = effective
         return to_public_response(effective)
 
     async def update_settings(
