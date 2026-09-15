@@ -74,9 +74,7 @@ class UserRepository(BaseRepository):
         )
         return (result.scalar_one() or 0) > 0
 
-    async def update_user(
-        self, user_id: str, update_data: dict, replace_roles: bool = True
-    ) -> bool:
+    async def update_user(self, user_id: str, update_data: dict) -> bool:
         uid = self.parse_id(user_id)
         if not uid:
             return False
@@ -89,7 +87,7 @@ class UserRepository(BaseRepository):
         for key, value in update_data.items():
             if hasattr(user, key):
                 setattr(user, key, value)
-        if role_code and replace_roles:
+        if role_code:
             await self._replace_user_role(uid, role_code)
         await self.session.flush()
         return True

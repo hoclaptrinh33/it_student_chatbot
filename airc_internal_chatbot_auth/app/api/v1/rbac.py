@@ -7,13 +7,23 @@ Endpoints:
 - User-Role: Assignment và removal
 - Permission queries: Get user permissions
 """
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Annotated
 from app.models.rbac import *
+from app.models.orm import User
 from app.repositories.rbac_repository import RBACRepository
+from app.repositories.user_repository import UserRepository
 from app.services.rbac_service import RBACService
-from app.api.dependencies import get_current_user, get_rbac_repository, get_rbac_service, get_auth_service, security
+from app.api.dependencies import (
+    get_current_user,
+    get_rbac_repository,
+    get_rbac_service,
+    get_user_repository,
+    security,
+)
 from app.models.user import UserInDB
 import logging
 
@@ -459,7 +469,7 @@ async def set_user_roles(
     current_user: UserInDB = Depends(require_system_manage),
     repo: RBACRepository = Depends(get_rbac_repository),
     rbac_service: RBACService = Depends(get_rbac_service),
-    auth_service = Depends(get_auth_service),
+    user_repo: UserRepository = Depends(get_user_repository),
 ):
     """
     Replace the user's role set (bulk). Cannot grant or revoke admin.
@@ -495,13 +505,11 @@ async def set_user_roles(
     rbac_service.invalidate_user_cache(user_id)
 
     updated_roles = await repo.get_user_roles(user_id)
-    primary = _primary_role_code(updated_roles)
-    try:
-        await auth_service.update_user_admin(
-            user_id, {"role": primary}, replace_roles=False
-        )
-    except Exception as exc:
-        logger.warning("Failed to sync users.role for %s: %s", user_id, exc)
+    uid = user_repo.parse_id(user_id)
+    user = await user_repo.session.get(User, uid) if uid else None
+    if user:
+        user.role = await user_repo.get_role_code(user_id) or "student"
+        user.updated_at = datetime.utcnow()
 
     logger.info(
         "User %s set roles for %s -> %s",
@@ -510,14 +518,6 @@ async def set_user_roles(
         [r.code for r in updated_roles],
     )
     return updated_roles
-
-
-def _primary_role_code(roles: List[RoleResponse]) -> str:
-    codes = [r.code for r in roles]
-    for preferred in ("admin", "teacher", "student"):
-        if preferred in codes:
-            return preferred
-    return codes[0] if codes else "student"
 
 
 @router.get("/users/{user_id}/roles", response_model=List[RoleResponse])
