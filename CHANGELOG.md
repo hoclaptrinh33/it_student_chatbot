@@ -32,6 +32,10 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | Gợi ý câu hỏi, xuất Markdown, drawer kiểm chứng nguồn, góp ý khi 👎 | Đã làm |
 | Jenkins Core thêm stage Test | Đã làm |
 | API không preload embedding/rerank (PRELOAD_MODELS); worker mới preload | Đã làm |
+| Academic API: CRUD môn học (admin), tiên quyết, transcript/eligible own vs any | Đã làm |
+| Upsert điểm + CSV import (batch 100, dòng lỗi không abort trừ `strict=true`) | Đã làm |
+| Sinh viên ghi điểm / xem bảng điểm người khác → 403; xóa môn có `student_records` → 409 | Đã làm |
+| Quyền học vụ `courses:*` / `records:*` / `materials:*` đồng bộ SQL + Auth + Core | Đã làm |
 
 ### Bug
 

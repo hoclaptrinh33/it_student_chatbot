@@ -11,6 +11,7 @@ from app.core.database import engine
 from app.core.cors import resolve_cors_origins
 from app.api.v1 import chat, datasets, files
 from app.api.v1 import sessions, chatbots, stats, voice, settings as system_settings
+from app.api.v1 import courses, academic
 from app.services.llm_service import llm_service
 
 logging.basicConfig(level=logging.INFO)
@@ -72,6 +73,8 @@ app.include_router(chatbots.router, prefix="/api/v1/chatbots", tags=["Chatbots"]
 app.include_router(stats.router, prefix="/api/v1/stats", tags=["Statistics"])
 app.include_router(voice.router, prefix="/api/v1/voice", tags=["Voice"])
 app.include_router(system_settings.router, prefix="/api/v1/settings", tags=["Settings"])
+app.include_router(courses.router, prefix="/api/v1/courses", tags=["Courses"])
+app.include_router(academic.router, prefix="/api/v1/academic", tags=["Academic"])
 
 # Mount static folder cho uploads (phục vụ ảnh bóc tách từ tài liệu)
 import os

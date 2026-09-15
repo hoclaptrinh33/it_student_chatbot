@@ -20,7 +20,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    python -m pytest tests/test_permissions.py tests/test_retrieval_config.py tests/test_ingest_job.py tests/test_chunking_accuracy.py tests/test_llm_resolve.py tests/test_settings_endpoint.py tests/test_cache_policy.py -q --tb=short
+                    python -m pytest tests/test_permissions.py tests/test_retrieval_config.py tests/test_ingest_job.py tests/test_chunking_accuracy.py tests/test_llm_resolve.py tests/test_settings_endpoint.py tests/test_cache_policy.py tests/test_academic_api.py tests/test_academic_records.py tests/test_eligible_courses.py -q --tb=short
                 '''
             }
         }

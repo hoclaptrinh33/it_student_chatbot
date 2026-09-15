@@ -32,3 +32,26 @@ def test_teacher_cannot_manage_any_chatbot():
 def test_admin_has_all_permissions():
     assert user_has_permission(_user(UserRole.ADMIN), Permission.SYSTEM_MANAGE)
     assert user_has_permission(_user(UserRole.ADMIN), Permission.CHAT_USE)
+    assert user_has_permission(_user(UserRole.ADMIN), Permission.COURSES_MANAGE)
+    assert user_has_permission(_user(UserRole.ADMIN), Permission.RECORDS_UPDATE)
+
+
+def test_student_academic_permissions():
+    student = _user(UserRole.STUDENT)
+    assert user_has_permission(student, Permission.COURSES_VIEW)
+    assert user_has_permission(student, Permission.RECORDS_VIEW_OWN)
+    assert user_has_permission(student, Permission.MATERIALS_VIEW)
+    assert not user_has_permission(student, Permission.COURSES_MANAGE)
+    assert not user_has_permission(student, Permission.RECORDS_UPDATE)
+    assert not user_has_permission(student, Permission.RECORDS_VIEW_ANY)
+    assert not user_has_permission(student, Permission.MATERIALS_MANAGE)
+
+
+def test_teacher_can_update_records_but_not_manage_courses():
+    teacher = _user(UserRole.TEACHER)
+    assert user_has_permission(teacher, Permission.COURSES_VIEW)
+    assert user_has_permission(teacher, Permission.RECORDS_VIEW_ANY)
+    assert user_has_permission(teacher, Permission.RECORDS_UPDATE)
+    assert user_has_permission(teacher, Permission.MATERIALS_MANAGE)
+    assert not user_has_permission(teacher, Permission.COURSES_MANAGE)
+    assert not user_has_permission(teacher, Permission.RECORDS_VIEW_OWN)

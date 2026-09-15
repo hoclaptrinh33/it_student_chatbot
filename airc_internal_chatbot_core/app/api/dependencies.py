@@ -10,7 +10,6 @@ from app.repositories import (
     DatasetFileRepository,
     ChunkRepository
 )
-from app.services import DatasetService, ChatService
 import httpx
 import os
 import logging
@@ -121,6 +120,27 @@ def require_permission(permission: Permission) -> Callable:
     return check_permission
 
 
+def require_any_permission(*permissions: Permission) -> Callable:
+    """Pass if the user has at least one of the given permissions."""
+    async def check_permission(
+        current_user: Annotated[User, Depends(get_current_user)]
+    ) -> User:
+        if any(user_has_permission(current_user, permission) for permission in permissions):
+            return current_user
+        codes = ", ".join(permission.value for permission in permissions)
+        logger.warning(
+            "Permission denied: user=%s role=%s tried any of [%s]",
+            current_user.email,
+            current_user.role,
+            codes,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {codes}",
+        )
+    return check_permission
+
+
 async def get_bearer_token(authorization: Optional[str] = Header(None, alias="Authorization")) -> str:
     """Raw JWT for service-to-service forwarding (e.g. Core → Auth)."""
     if not authorization or not authorization.startswith("Bearer "):
@@ -166,7 +186,8 @@ async def get_dataset_service(
     dataset_file_repo: DatasetFileRepository = Depends(get_dataset_file_repo),
     file_repo: FileRepository = Depends(get_file_repo),
     chunk_repo: ChunkRepository = Depends(get_chunk_repo)
-) -> DatasetService:
+):
+    from app.services.dataset_service import DatasetService
     return DatasetService(dataset_repo, dataset_file_repo, file_repo, chunk_repo)
 
 
@@ -177,7 +198,8 @@ async def get_chat_service(
     session_repo = Depends(get_session_repo),
     chatbot_repo = Depends(get_chatbot_repo),
     file_repo: FileRepository = Depends(get_file_repo),
-) -> ChatService:
+):
+    from app.services.chat_service import ChatService
     return ChatService(
         dataset_repo, dataset_file_repo, chunk_repo,
         session_repo, chatbot_repo, file_repo,
@@ -199,3 +221,57 @@ async def get_chatbot_service(
 ):
     from app.services.chatbot_service import ChatbotService
     return ChatbotService(chatbot_repo, dataset_repo)
+
+
+async def get_course_repo(session: AsyncSession = Depends(get_session)):
+    from app.repositories.course_repository import CourseRepository
+    return CourseRepository(session)
+
+
+async def get_prerequisite_repo(session: AsyncSession = Depends(get_session)):
+    from app.repositories.prerequisite_repository import PrerequisiteRepository
+    return PrerequisiteRepository(session)
+
+
+async def get_student_record_repo(session: AsyncSession = Depends(get_session)):
+    from app.repositories.student_record_repository import StudentRecordRepository
+    return StudentRecordRepository(session)
+
+
+async def get_learning_material_repo(session: AsyncSession = Depends(get_session)):
+    from app.repositories.learning_material_repository import LearningMaterialRepository
+    return LearningMaterialRepository(session)
+
+
+async def get_course_service(
+    course_repo=Depends(get_course_repo),
+    prerequisite_repo=Depends(get_prerequisite_repo),
+):
+    from app.services.course_service import CourseService
+    return CourseService(course_repo, prerequisite_repo)
+
+
+async def get_prerequisite_service(
+    prerequisite_repo=Depends(get_prerequisite_repo),
+    course_repo=Depends(get_course_repo),
+):
+    from app.services.prerequisite_service import PrerequisiteService
+    return PrerequisiteService(prerequisite_repo, course_repo)
+
+
+async def get_student_record_service(
+    record_repo=Depends(get_student_record_repo),
+    course_repo=Depends(get_course_repo),
+    prerequisite_repo=Depends(get_prerequisite_repo),
+):
+    from app.services.student_record_service import StudentRecordService
+    return StudentRecordService(record_repo, course_repo, prerequisite_repo)
+
+
+async def get_learning_material_service(
+    material_repo=Depends(get_learning_material_repo),
+    course_repo=Depends(get_course_repo),
+    file_repo: FileRepository = Depends(get_file_repo),
+):
+    from app.services.learning_material_service import LearningMaterialService
+    return LearningMaterialService(material_repo, course_repo, file_repo)

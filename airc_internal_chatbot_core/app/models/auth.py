@@ -55,9 +55,19 @@ class Permission(str, Enum):
     RBAC_MANAGE_ROLES = "rbac:manage_roles"
     RBAC_MANAGE_PERMISSIONS = "rbac:manage_permissions"
 
+    # Academic
+    COURSES_VIEW = "courses:view"
+    COURSES_MANAGE = "courses:manage"
+    RECORDS_VIEW_OWN = "records:view:own"
+    RECORDS_VIEW_ANY = "records:view:any"
+    RECORDS_UPDATE = "records:update"
+    MATERIALS_VIEW = "materials:view"
+    MATERIALS_MANAGE = "materials:manage"
+
 
 # Role → permission matrix (aligned with Auth service).
 # Teacher also gets ANALYTICS_VIEW so the existing dashboard stays available.
+# Teacher may edit all student_records; teacher does not get courses:manage.
 ROLE_PERMISSIONS: dict[UserRole, list[Permission]] = {
     UserRole.ADMIN: list(Permission),
     UserRole.TEACHER: [
@@ -70,12 +80,20 @@ ROLE_PERMISSIONS: dict[UserRole, list[Permission]] = {
         Permission.CHAT_USE,
         Permission.CHAT_VIEW_OWN,
         Permission.ANALYTICS_VIEW,
+        Permission.COURSES_VIEW,
+        Permission.RECORDS_VIEW_ANY,
+        Permission.RECORDS_UPDATE,
+        Permission.MATERIALS_VIEW,
+        Permission.MATERIALS_MANAGE,
     ],
     UserRole.STUDENT: [
         Permission.DATASETS_VIEW_SHARED,
         Permission.CHATBOTS_USE,
         Permission.CHAT_USE,
         Permission.CHAT_VIEW_OWN,
+        Permission.COURSES_VIEW,
+        Permission.RECORDS_VIEW_OWN,
+        Permission.MATERIALS_VIEW,
     ],
 }
 

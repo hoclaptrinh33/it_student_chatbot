@@ -56,6 +56,15 @@ class Permission(str, Enum):
     ANALYTICS_VIEW = "analytics:view"
     SYSTEM_MANAGE = "system:manage"
 
+    # Academic
+    COURSES_VIEW = "courses:view"
+    COURSES_MANAGE = "courses:manage"
+    RECORDS_VIEW_OWN = "records:view:own"
+    RECORDS_VIEW_ANY = "records:view:any"
+    RECORDS_UPDATE = "records:update"
+    MATERIALS_VIEW = "materials:view"
+    MATERIALS_MANAGE = "materials:manage"
+
 
 # Role to Permissions mapping
 ROLE_PERMISSIONS: dict[UserRole, List[Permission]] = {
@@ -77,6 +86,13 @@ ROLE_PERMISSIONS: dict[UserRole, List[Permission]] = {
         Permission.CHAT_VIEW_ANY,
         Permission.ANALYTICS_VIEW,
         Permission.SYSTEM_MANAGE,
+        Permission.COURSES_VIEW,
+        Permission.COURSES_MANAGE,
+        Permission.RECORDS_VIEW_OWN,
+        Permission.RECORDS_VIEW_ANY,
+        Permission.RECORDS_UPDATE,
+        Permission.MATERIALS_VIEW,
+        Permission.MATERIALS_MANAGE,
     ],
     UserRole.TEACHER: [
         # Teacher: Chat + manage own datasets (via chat interface)
@@ -89,6 +105,11 @@ ROLE_PERMISSIONS: dict[UserRole, List[Permission]] = {
         Permission.CHAT_USE,            # Primary function: Chat
         Permission.CHAT_VIEW_OWN,       # View own chat history
         Permission.ANALYTICS_VIEW,      # Dashboard stats
+        Permission.COURSES_VIEW,
+        Permission.RECORDS_VIEW_ANY,
+        Permission.RECORDS_UPDATE,
+        Permission.MATERIALS_VIEW,
+        Permission.MATERIALS_MANAGE,
     ],
     UserRole.STUDENT: [
         # Student: Chat only with shared datasets
@@ -96,6 +117,9 @@ ROLE_PERMISSIONS: dict[UserRole, List[Permission]] = {
         Permission.CHATBOTS_USE,         # Use chatbot
         Permission.CHAT_USE,             # Primary function: Chat
         Permission.CHAT_VIEW_OWN,        # View own chat history
+        Permission.COURSES_VIEW,
+        Permission.RECORDS_VIEW_OWN,
+        Permission.MATERIALS_VIEW,
     ],
 }
 
