@@ -79,6 +79,14 @@ Nếu bạn có toàn bộ source code trong thư mục cha `airc_internal_chatb
    ```bash
    docker-compose up -d --build
    ```
+
+   Volume Postgres mới chạy `init_db.sql`. Volume cũ cần delta RAG:
+
+   ```bash
+   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/002_align_rag_schema.sql
+   ```
+
+   hoặc `python migrations/apply.py` / `APPLY_SQL_MIGRATIONS=true` khi start Core.
 3. **Truy cập:**
 
    - Frontend: `http://localhost:3000`

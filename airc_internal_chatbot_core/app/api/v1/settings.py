@@ -7,8 +7,10 @@ from typing import Optional
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.dependencies import get_current_user, require_permission
-from app.core.database import get_database
+from app.core.database import get_session
 from app.models.auth import Permission, User
 from app.models.settings_schemas import (
     LLMConnectionTestRequest,
@@ -29,8 +31,8 @@ router = APIRouter()
 admin_only = require_permission(Permission.SYSTEM_MANAGE)
 
 
-def get_system_settings_service(db=Depends(get_database)) -> SystemSettingsService:
-    return SystemSettingsService(SystemSettingsRepository(db))
+def get_system_settings_service(session: AsyncSession = Depends(get_session)) -> SystemSettingsService:
+    return SystemSettingsService(SystemSettingsRepository(session))
 
 
 async def fetch_provider_models(base_url: str, api_key: Optional[str]) -> list:

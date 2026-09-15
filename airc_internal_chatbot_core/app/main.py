@@ -4,7 +4,10 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from app.core import settings, connect_to_mongo, close_mongo_connection
+from sqlalchemy import text
+
+from app.core import settings, connect_to_db, close_db
+from app.core.database import engine
 from app.core.cors import resolve_cors_origins
 from app.api.v1 import chat, datasets, files
 from app.api.v1 import sessions, chatbots, stats, voice, settings as system_settings
@@ -16,9 +19,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("[STARTUP] Connecting to MongoDB...")
-    await connect_to_mongo()
-    logger.info("[STARTUP] MongoDB connected")
+    logger.info("[STARTUP] Connecting to Postgres...")
+    await connect_to_db()
+    logger.info("[STARTUP] Postgres connected")
 
     # Heavy embedding/rerank models stay lazy on the API process.
     # Set PRELOAD_MODELS=true on the worker (or a dedicated inference box).
@@ -43,8 +46,8 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("[SHUTDOWN] Closing MongoDB connection...")
-    await close_mongo_connection()
+    logger.info("[SHUTDOWN] Closing Postgres connection...")
+    await close_db()
 
 app = FastAPI(
     title=settings.app_name,
@@ -78,4 +81,6 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/health")
 async def health_check():
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
     return {"status": "healthy"}

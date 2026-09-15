@@ -1,4 +1,7 @@
 """
+DEPRECATED: Mongo seeder. Chatbot/dataset seed is in init_db.sql.
+Do not import from the Core app runtime.
+
 Seed Chatbot & Dataset cho Core Service
 
 Script này tạo:

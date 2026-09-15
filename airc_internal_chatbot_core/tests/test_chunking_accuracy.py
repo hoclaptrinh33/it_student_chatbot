@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 # Chỉ mock các thư viện thực sự bị thiếu trong venv của hermes-agent
 modules_to_mock = [
-    'motor', 'motor.motor_asyncio', 'bson', 'bson.errors',
     'qdrant_client', 'qdrant_client.http', 'qdrant_client.http.models', 'qdrant_client.models',
     'sentence_transformers'
 ]
@@ -14,15 +13,8 @@ for name in modules_to_mock:
     mod.__path__ = []
     sys.modules[name] = mod
 
-# Định nghĩa các class/exception cụ thể trong mock modules
-sys.modules['bson'].ObjectId = MagicMock
-sys.modules['bson.errors'].InvalidId = Exception
 sys.modules['sentence_transformers'].SentenceTransformer = MagicMock
 sys.modules['sentence_transformers'].CrossEncoder = MagicMock
-
-# Thiết lập chi tiết cho motor.motor_asyncio
-sys.modules['motor.motor_asyncio'].AsyncIOMotorDatabase = MagicMock
-sys.modules['motor.motor_asyncio'].AsyncIOMotorClient = MagicMock
 
 # Thiết lập chi tiết cho qdrant_client
 sys.modules['qdrant_client'].QdrantClient = MagicMock

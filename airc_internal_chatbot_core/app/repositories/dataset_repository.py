@@ -1,115 +1,103 @@
 """
 Dataset Repository - Data access cho datasets
 """
-from app.repositories.base_repository import BaseRepository
-from app.models.database import Collections
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from sqlalchemy import or_, select
+
+from app.models.orm import Dataset
+from app.repositories.base_repository import BaseRepository
 
 
 class DatasetRepository(BaseRepository):
     """Repository cho Dataset operations"""
-    
-    def __init__(self, db):
-        super().__init__(db, Collections.DATASETS)
-    
+
+    def __init__(self, session):
+        super().__init__(session, Dataset)
+
     async def create_dataset(
         self,
         name: str,
-        # config removed
         owner_id: str,
-        visibility: str = "private"
+        visibility: str = "private",
     ) -> dict:
-        """
-        Tạo dataset mới
-        
-        Args:
-            name: Tên dataset
-            owner_id: ID của user tạo dataset
-            visibility: private/public
-        """
-        doc = {
-            "name": name,
-            # "config": config, # Removed
-            "owner_id": owner_id,
-            "visibility": visibility,
-            "shared_with": [],  # List of user IDs
-            "created_at": datetime.utcnow()
-        }
-        doc_id = await self.insert_one(doc)
-        doc["id"] = doc_id
-        return doc
-    
-    async def get_by_id(self, dataset_id: str) -> Optional[dict]:
-        """Lấy dataset theo ID"""
-        oid = self.to_object_id(dataset_id)
-        if not oid:
-            return None
-        doc = await self.find_one({"_id": oid})
-        return self.serialize_doc(doc)
-    
-    async def get_all(self) -> List[dict]:
-        """Lấy tất cả datasets"""
-        docs = await self.find_many({})
-        return self.serialize_docs(docs)
-    
-    async def get_by_owner(self, owner_id: str) -> List[dict]:
-        """
-        Lấy datasets của owner
-        
-        Args:
-            owner_id: ID của owner
-        """
-        docs = await self.find_many({"owner_id": owner_id})
-        return self.serialize_docs(docs)
-    
-    async def get_shared_with_user(self, user_id: str) -> List[dict]:
-        """
-        Lấy datasets được share với user
-        
-        Args:
-            user_id: ID của user
-        """
-        docs = await self.find_many({
-            "$or": [
-                {"shared_with": user_id},
-                {"shared_with": "*"},
-            ]
-        })
-        return self.serialize_docs(docs)
-    
-    async def share_dataset(self, dataset_id: str, user_ids: List[str]) -> bool:
-        """
-        Share dataset với users
-        
-        Args:
-            dataset_id: ID của dataset
-            user_ids: List of user IDs to share with
-        """
-        oid = self.to_object_id(dataset_id)
-        if not oid:
-            return False
-        
-        result = await self.collection.update_one(
-            {"_id": oid},
-            {"$set": {"shared_with": user_ids}}
+        row = Dataset(
+            name=name,
+            owner_id=self.parse_id(owner_id),
+            visibility=visibility,
+            shared_with=[],
+            created_at=datetime.utcnow(),
         )
-        return result.matched_count > 0
-    
-    async def delete_dataset(self, dataset_id: str) -> bool:
-        """Xóa dataset"""
-        oid = self.to_object_id(dataset_id)
-        if not oid:
+        self.session.add(row)
+        await self.session.flush()
+        return self.serialize_row(row)
+
+    async def get_by_id(self, dataset_id: str) -> Optional[dict]:
+        uid = self.parse_id(dataset_id)
+        if not uid:
+            return None
+        row = await self.session.get(Dataset, uid)
+        return self.serialize_row(row)
+
+    async def get_all(self) -> List[dict]:
+        result = await self.session.execute(select(Dataset))
+        return self.serialize_rows(result.scalars().all())
+
+    async def get_by_owner(self, owner_id: str) -> List[dict]:
+        uid = self.parse_id(owner_id)
+        if not uid:
+            return []
+        result = await self.session.execute(select(Dataset).where(Dataset.owner_id == uid))
+        return self.serialize_rows(result.scalars().all())
+
+    async def get_shared_with_user(self, user_id: str) -> List[dict]:
+        result = await self.session.execute(
+            select(Dataset).where(
+                or_(
+                    Dataset.shared_with.contains([user_id]),
+                    Dataset.shared_with.contains(["*"]),
+                )
+            )
+        )
+        return self.serialize_rows(result.scalars().all())
+
+    async def share_dataset(self, dataset_id: str, user_ids: List[str]) -> bool:
+        uid = self.parse_id(dataset_id)
+        if not uid:
             return False
-        return await self.delete_one({"_id": oid})
+        row = await self.session.get(Dataset, uid)
+        if not row:
+            return False
+        row.shared_with = user_ids or []
+        row.updated_at = datetime.utcnow()
+        await self.session.flush()
+        return True
+
+    async def delete_dataset(self, dataset_id: str) -> bool:
+        uid = self.parse_id(dataset_id)
+        if not uid:
+            return False
+        row = await self.session.get(Dataset, uid)
+        if not row:
+            return False
+        await self.session.delete(row)
+        await self.session.flush()
+        return True
 
     async def update_dataset(self, dataset_id: str, data: dict) -> Optional[dict]:
-        """Cập nhật dataset"""
-        oid = self.to_object_id(dataset_id)
-        if not oid:
+        uid = self.parse_id(dataset_id)
+        if not uid:
             return None
-            
-        result = await self.update_one({"_id": oid}, data)
-        if result:
-            return await self.get_by_id(dataset_id)
-        return None
+        row = await self.session.get(Dataset, uid)
+        if not row:
+            return None
+        payload = dict(data)
+        if "owner_id" in payload:
+            payload["owner_id"] = self.parse_id(payload["owner_id"]) if payload["owner_id"] else None
+        payload["updated_at"] = datetime.utcnow()
+        for key, value in payload.items():
+            if hasattr(row, key):
+                setattr(row, key, value)
+        await self.session.flush()
+        return self.serialize_row(row)

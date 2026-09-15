@@ -1,527 +1,371 @@
 """
-RBAC Repository - Database operations cho RBAC system
-
-Repository cho:
-- Permissions CRUD
-- Roles CRUD  
-- Role-Permission mapping
-- User-Role assignment
-- Permission queries
+RBAC Repository - SQLAlchemy access for permissions, roles, and assignments
 """
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.models.rbac import *
-from bson import ObjectId
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 import logging
+
+from sqlalchemy import delete, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+from app.models.orm import Permission, Role, RolePermission, User, UserRole
+from app.models.rbac import (
+    PermissionCreate,
+    PermissionResponse,
+    PermissionUpdate,
+    RoleCreate,
+    RoleResponse,
+    RoleUpdate,
+    RoleWithPermissions,
+)
+from app.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
 class RBACRepository:
-    """
-    Repository xử lý tất cả database operations cho RBAC
-    """
-    
-    def __init__(self, db: AsyncIOMotorDatabase):
-        self.db = db
-        self.permissions = db.permissions
-        self.roles = db.roles
-        self.role_permissions = db.role_permissions
-        self.user_roles = db.user_roles
-    
-    # ==================== PERMISSIONS ====================
-    
-    async def create_permission(
-        self, 
-        perm: PermissionCreate, 
-        created_by: Optional[str] = None
-    ) -> PermissionResponse:
-        """
-        Tạo permission mới
-        
-        Args:
-            perm: Permission data
-            created_by: User ID (None cho system permissions)
-            
-        Returns:
-            PermissionResponse với ID mới
-        """
-        doc = perm.model_dump()
-        doc["created_at"] = datetime.utcnow()
-        doc["updated_at"] = datetime.utcnow()
-        doc["created_by"] = ObjectId(created_by) if created_by else None
-        
-        result = await self.permissions.insert_one(doc)
-        doc["_id"] = str(result.inserted_id)
-        
-        logger.info(f"Created permission: {perm.code}")
-        return PermissionResponse(**doc)
-    
-    async def get_all_permissions(
-        self, 
-        include_system: bool = True
-    ) -> List[PermissionResponse]:
-        """
-        Lấy tất cả permissions
-        
-        Args:
-            include_system: Include system permissions (default True)
-            
-        Returns:
-            List of permissions
-        """
-        query = {} if include_system else {"is_system": False}
-        cursor = self.permissions.find(query)
-        
-        results = []
-        async for doc in cursor:
-            doc["_id"] = str(doc["_id"])
-            results.append(PermissionResponse(**doc))
-        
-        return results
-    
-    async def get_permission_by_id(self, permission_id: str) -> Optional[PermissionResponse]:
-        """Get permission by ID"""
-        doc = await self.permissions.find_one({"_id": ObjectId(permission_id)})
-        if not doc:
-            return None
-        
-        doc["_id"] = str(doc["_id"])
-        return PermissionResponse(**doc)
-    
-    async def get_permission_by_code(self, code: str) -> Optional[PermissionResponse]:
-        """Get permission by code"""
-        doc = await self.permissions.find_one({"code": code})
-        if not doc:
-            return None
-        
-        doc["_id"] = str(doc["_id"])
-        return PermissionResponse(**doc)
-    
-    async def update_permission(
-        self, 
-        permission_id: str, 
-        update_data: PermissionUpdate
-    ) -> Optional[PermissionResponse]:
-        """
-        Cập nhật permission
-        
-        Note: Chỉ cho phép sửa name và description
-        """
-        update_dict = update_data.model_dump(exclude_unset=True)
-        if not update_dict:
-            return await self.get_permission_by_id(permission_id)
-        
-        update_dict["updated_at"] = datetime.utcnow()
-        
-        result = await self.permissions.find_one_and_update(
-            {"_id": ObjectId(permission_id)},
-            {"$set": update_dict},
-            return_document=True
+    """Repository xử lý tất cả database operations cho RBAC"""
+
+    def __init__(self, session):
+        self.session = session
+
+    def _perm_response(self, row: Permission) -> PermissionResponse:
+        data = BaseRepository.serialize_row(row)
+        data["_id"] = data["id"]
+        data.setdefault("updated_at", None)
+        return PermissionResponse(**data)
+
+    async def _perm_count(self, role_id) -> int:
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(RolePermission)
+            .where(RolePermission.role_id == role_id)
         )
-        
-        if not result:
+        return int(result.scalar_one() or 0)
+
+    def _role_response(self, row: Role, permission_count: int = 0) -> RoleResponse:
+        data = BaseRepository.serialize_row(row)
+        data["_id"] = data["id"]
+        data["permission_count"] = permission_count
+        return RoleResponse(**data)
+
+    # ==================== PERMISSIONS ====================
+
+    async def create_permission(
+        self,
+        perm: PermissionCreate,
+        created_by: Optional[str] = None,
+    ) -> PermissionResponse:
+        row = Permission(
+            name=perm.name,
+            code=perm.code,
+            resource=perm.resource,
+            action=perm.action,
+            scope=perm.scope,
+            description=perm.description,
+            is_system=perm.is_system,
+            created_at=datetime.utcnow(),
+        )
+        self.session.add(row)
+        await self.session.flush()
+        logger.info("Created permission: %s", perm.code)
+        return self._perm_response(row)
+
+    async def get_all_permissions(self, include_system: bool = True) -> List[PermissionResponse]:
+        stmt = select(Permission)
+        if not include_system:
+            stmt = stmt.where(Permission.is_system.is_(False))
+        result = await self.session.execute(stmt)
+        return [self._perm_response(row) for row in result.scalars().all()]
+
+    async def get_permission_by_id(self, permission_id: str) -> Optional[PermissionResponse]:
+        uid = BaseRepository.parse_id(permission_id)
+        if not uid:
             return None
-        
-        result["_id"] = str(result["_id"])
-        return PermissionResponse(**result)
-    
+        row = await self.session.get(Permission, uid)
+        return self._perm_response(row) if row else None
+
+    async def get_permission_by_code(self, code: str) -> Optional[PermissionResponse]:
+        result = await self.session.execute(select(Permission).where(Permission.code == code))
+        row = result.scalar_one_or_none()
+        return self._perm_response(row) if row else None
+
+    async def update_permission(
+        self,
+        permission_id: str,
+        update_data: PermissionUpdate,
+    ) -> Optional[PermissionResponse]:
+        uid = BaseRepository.parse_id(permission_id)
+        if not uid:
+            return None
+        row = await self.session.get(Permission, uid)
+        if not row:
+            return None
+        update_dict = update_data.model_dump(exclude_unset=True)
+        for key, value in update_dict.items():
+            if hasattr(row, key):
+                setattr(row, key, value)
+        await self.session.flush()
+        return self._perm_response(row)
+
     async def delete_permission(self, permission_id: str) -> bool:
-        """
-        Xóa permission (chỉ non-system permissions)
-        
-        Returns:
-            True nếu xóa thành công
-        """
-        # Check if system permission
         perm = await self.get_permission_by_id(permission_id)
         if not perm or perm.is_system:
             return False
-        
-        # Delete from role_permissions first
-        await self.role_permissions.delete_many({"permission_id": ObjectId(permission_id)})
-        
-        # Delete permission
-        result = await self.permissions.delete_one({"_id": ObjectId(permission_id)})
-        return result.deleted_count > 0
-    
+        uid = BaseRepository.parse_id(permission_id)
+        await self.session.execute(delete(RolePermission).where(RolePermission.permission_id == uid))
+        row = await self.session.get(Permission, uid)
+        if not row:
+            return False
+        await self.session.delete(row)
+        await self.session.flush()
+        return True
+
     # ==================== ROLES ====================
-    
+
     async def create_role(
-        self, 
-        role: RoleCreate, 
-        created_by: Optional[str] = None
+        self,
+        role: RoleCreate,
+        created_by: Optional[str] = None,
     ) -> RoleResponse:
-        """Tạo role mới"""
-        doc = role.model_dump()
-        doc["is_active"] = True
-        doc["created_at"] = datetime.utcnow()
-        doc["updated_at"] = datetime.utcnow()
-        doc["created_by"] = ObjectId(created_by) if created_by else None
-        
-        result = await self.roles.insert_one(doc)
-        doc["_id"] = str(result.inserted_id)
-        doc["permission_count"] = 0
-        
-        logger.info(f"Created role: {role.code}")
-        return RoleResponse(**doc)
-    
-    async def get_all_roles(
-        self, 
-        include_inactive: bool = False
-    ) -> List[RoleResponse]:
-        """Lấy tất cả roles"""
-        query = {} if include_inactive else {"is_active": True}
-        cursor = self.roles.find(query)
-        roles = await cursor.to_list(None)
-        
-        results = []
-        for role in roles:
-            # Count permissions
-            role_id_obj = role["_id"]
-            perm_count = await self.role_permissions.count_documents({"role_id": role_id_obj})
-            print(f"[DEBUG] Role: {role.get('code')} | ID: {role_id_obj} ({type(role_id_obj)}) | Count: {perm_count}")
-            
-            # Convert ObjectId to string for Pydantic
-            role["_id"] = str(role["_id"])
-            role["permission_count"] = perm_count
-            results.append(RoleResponse(**role))
-        
-        return results
-    
-    async def get_role_by_id(self, role_id: str) -> Optional[RoleResponse]:
-        """Get role by ID"""
-        doc = await self.roles.find_one({"_id": ObjectId(role_id)})
-        if not doc:
-            return None
-        
-        perm_count = await self.role_permissions.count_documents({"role_id": ObjectId(role_id)})
-        doc["_id"] = str(doc["_id"])
-        doc["permission_count"] = perm_count
-        return RoleResponse(**doc)
-    
-    async def get_role_by_code(self, code: str) -> Optional[RoleResponse]:
-        """Get role by code"""
-        doc = await self.roles.find_one({"code": code})
-        if not doc:
-            return None
-        
-        perm_count = await self.role_permissions.count_documents({"role_id": doc["_id"]})
-        doc["_id"] = str(doc["_id"])
-        doc["permission_count"] = perm_count
-        return RoleResponse(**doc)
-    
-    async def get_role_with_permissions(
-        self, 
-        role_id: str
-    ) -> Optional[RoleWithPermissions]:
-        """
-        Get role với danh sách permissions
-        
-        Sử dụng aggregation pipeline để join với permissions
-        """
-        pipeline = [
-            {"$match": {"_id": ObjectId(role_id)}},
-            {"$lookup": {
-                "from": "role_permissions",
-                "localField": "_id",
-                "foreignField": "role_id",
-                "as": "role_perms"
-            }},
-            {"$lookup": {
-                "from": "permissions",
-                "localField": "role_perms.permission_id",
-                "foreignField": "_id",
-                "as": "permissions"
-            }},
-            {"$addFields": {
-                "permission_count": {"$size": "$permissions"}
-            }}
-        ]
-        
-        cursor = self.roles.aggregate(pipeline)
-        docs = await cursor.to_list(1)
-        
-        if not docs:
-            return None
-        
-        doc = docs[0]
-        doc["_id"] = str(doc["_id"])
-        
-        # Convert permission ObjectIds to strings
-        for perm in doc.get("permissions", []):
-            perm["_id"] = str(perm["_id"])
-        
-        return RoleWithPermissions(**doc)
-    
-    async def update_role(
-        self, 
-        role_id: str, 
-        update_data: RoleUpdate
-    ) -> Optional[RoleResponse]:
-        """Cập nhật role"""
-        update_dict = update_data.model_dump(exclude_unset=True)
-        if not update_dict:
-            return await self.get_role_by_id(role_id)
-        
-        update_dict["updated_at"] = datetime.utcnow()
-        
-        result = await self.roles.find_one_and_update(
-            {"_id": ObjectId(role_id)},
-            {"$set": update_dict},
-            return_document=True
+        row = Role(
+            name=role.name,
+            code=role.code,
+            description=role.description,
+            is_system=role.is_system,
+            is_active=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
         )
-        
-        if not result:
+        self.session.add(row)
+        await self.session.flush()
+        logger.info("Created role: %s", role.code)
+        return self._role_response(row, 0)
+
+    async def get_all_roles(self, include_inactive: bool = False) -> List[RoleResponse]:
+        stmt = select(Role)
+        if not include_inactive:
+            stmt = stmt.where(Role.is_active.is_(True))
+        result = await self.session.execute(stmt)
+        roles = result.scalars().all()
+        out = []
+        for role in roles:
+            out.append(self._role_response(role, await self._perm_count(role.id)))
+        return out
+
+    async def get_role_by_id(self, role_id: str) -> Optional[RoleResponse]:
+        uid = BaseRepository.parse_id(role_id)
+        if not uid:
             return None
-        
-        perm_count = await self.role_permissions.count_documents({"role_id": ObjectId(role_id)})
-        result["_id"] = str(result["_id"])
-        result["permission_count"] = perm_count
-        return RoleResponse(**result)
-    
+        row = await self.session.get(Role, uid)
+        if not row:
+            return None
+        return self._role_response(row, await self._perm_count(uid))
+
+    async def get_role_by_code(self, code: str) -> Optional[RoleResponse]:
+        result = await self.session.execute(select(Role).where(Role.code == code))
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return self._role_response(row, await self._perm_count(row.id))
+
+    async def get_role_with_permissions(self, role_id: str) -> Optional[RoleWithPermissions]:
+        uid = BaseRepository.parse_id(role_id)
+        if not uid:
+            return None
+        row = await self.session.get(Role, uid)
+        if not row:
+            return None
+        result = await self.session.execute(
+            select(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .where(RolePermission.role_id == uid)
+        )
+        perms = [self._perm_response(p) for p in result.scalars().all()]
+        base = self._role_response(row, len(perms))
+        return RoleWithPermissions(**base.model_dump(by_alias=True), permissions=perms)
+
+    async def update_role(self, role_id: str, update_data: RoleUpdate) -> Optional[RoleResponse]:
+        uid = BaseRepository.parse_id(role_id)
+        if not uid:
+            return None
+        row = await self.session.get(Role, uid)
+        if not row:
+            return None
+        update_dict = update_data.model_dump(exclude_unset=True)
+        for key, value in update_dict.items():
+            if hasattr(row, key):
+                setattr(row, key, value)
+        row.updated_at = datetime.utcnow()
+        await self.session.flush()
+        return self._role_response(row, await self._perm_count(uid))
+
     async def delete_role(self, role_id: str) -> bool:
-        """
-        Xóa role (chỉ non-system roles)
-        
-        Also deletes all role_permissions và user_roles
-        """
-        # Check if system role
         role = await self.get_role_by_id(role_id)
         if not role or role.is_system:
             return False
-        
-        # Delete mappings
-        await self.role_permissions.delete_many({"role_id": ObjectId(role_id)})
-        await self.user_roles.delete_many({"role_id": ObjectId(role_id)})
-        
-        # Delete role
-        result = await self.roles.delete_one({"_id": ObjectId(role_id)})
-        return result.deleted_count > 0
-    
-    # ==================== ROLE-PERMISSION MAPPING ====================
-    
-    async def grant_permissions_to_role(
-        self, 
-        role_id: str, 
-        permission_ids: List[str],
-        granted_by: Optional[str] = None
-    ):
-        """
-        Grant multiple permissions to role
-        
-        Sử dụng insert_many với ignore duplicates
-        """
-        if not permission_ids:
-            return
+        uid = BaseRepository.parse_id(role_id)
+        await self.session.execute(delete(RolePermission).where(RolePermission.role_id == uid))
+        await self.session.execute(delete(UserRole).where(UserRole.role_id == uid))
+        row = await self.session.get(Role, uid)
+        if not row:
+            return False
+        await self.session.delete(row)
+        await self.session.flush()
+        return True
 
-        docs = []
+    # ==================== ROLE-PERMISSION MAPPING ====================
+
+    async def grant_permissions_to_role(
+        self,
+        role_id: str,
+        permission_ids: List[str],
+        granted_by: Optional[str] = None,
+    ):
+        rid = BaseRepository.parse_id(role_id)
+        if not rid or not permission_ids:
+            return
+        values = []
         for pid in permission_ids:
-            docs.append({
-                "role_id": ObjectId(role_id),
-                "permission_id": ObjectId(pid),
-                "granted_at": datetime.utcnow(),
-                "granted_by": ObjectId(granted_by) if granted_by else None
-            })
-        
-        if docs:
-            try:
-                await self.role_permissions.insert_many(docs, ordered=False)
-            except Exception as e:
-                # Ignore duplicate key errors
-                if "duplicate" not in str(e).lower():
-                    raise
-        
-        logger.info(f"Granted {len(permission_ids)} permissions to role {role_id}")
+            puid = BaseRepository.parse_id(pid)
+            if puid:
+                values.append({"role_id": rid, "permission_id": puid})
+        if not values:
+            return
+        stmt = pg_insert(RolePermission).values(values).on_conflict_do_nothing()
+        await self.session.execute(stmt)
+        logger.info("Granted %s permissions to role %s", len(permission_ids), role_id)
 
     async def set_role_permissions(
         self,
         role_id: str,
         permission_ids: List[str],
-        assigned_by: Optional[str] = None
+        assigned_by: Optional[str] = None,
     ):
-        """
-        Set permissions for a role (Replace existing)
-        
-        1. Delete all existing permissions for role
-        2. Insert new permissions
-        """
-        # 1. Clear existing
-        await self.role_permissions.delete_many({"role_id": ObjectId(role_id)})
-        
-        # 2. Grant new ones
+        rid = BaseRepository.parse_id(role_id)
+        if not rid:
+            return
+        await self.session.execute(delete(RolePermission).where(RolePermission.role_id == rid))
         if permission_ids:
             await self.grant_permissions_to_role(role_id, permission_ids, assigned_by)
-            
-        logger.info(f"Set {len(permission_ids)} permissions for role {role_id}")
-    
-    async def revoke_permission_from_role(
-        self, 
-        role_id: str, 
-        permission_id: str
-    ) -> bool:
-        """Revoke permission from role"""
-        result = await self.role_permissions.delete_one({
-            "role_id": ObjectId(role_id),
-            "permission_id": ObjectId(permission_id)
-        })
-        
-        return result.deleted_count > 0
-    
+        logger.info("Set %s permissions for role %s", len(permission_ids), role_id)
+
+    async def revoke_permission_from_role(self, role_id: str, permission_id: str) -> bool:
+        rid = BaseRepository.parse_id(role_id)
+        pid = BaseRepository.parse_id(permission_id)
+        if not rid or not pid:
+            return False
+        result = await self.session.execute(
+            delete(RolePermission).where(
+                RolePermission.role_id == rid,
+                RolePermission.permission_id == pid,
+            )
+        )
+        return (result.rowcount or 0) > 0
+
     async def get_role_permissions(self, role_id: str) -> List[PermissionResponse]:
-        """Get all permissions của một role"""
-        pipeline = [
-            {"$match": {"role_id": ObjectId(role_id)}},
-            {"$lookup": {
-                "from": "permissions",
-                "localField": "permission_id",
-                "foreignField": "_id",
-                "as": "permission"
-            }},
-            {"$unwind": "$permission"},
-            {"$replaceRoot": {"newRoot": "$permission"}}
-        ]
-        
-        cursor = self.role_permissions.aggregate(pipeline)
-        results = []
-        async for doc in cursor:
-            doc["_id"] = str(doc["_id"])
-            results.append(PermissionResponse(**doc))
-        
-        return results
-    
+        uid = BaseRepository.parse_id(role_id)
+        if not uid:
+            return []
+        result = await self.session.execute(
+            select(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .where(RolePermission.role_id == uid)
+        )
+        return [self._perm_response(p) for p in result.scalars().all()]
+
     # ==================== USER-ROLE ASSIGNMENT ====================
-    
+
     async def assign_role_to_user(
-        self, 
-        user_id: str, 
+        self,
+        user_id: str,
         role_id: str,
         assigned_by: Optional[str] = None,
-        expires_at: Optional[datetime] = None
+        expires_at: Optional[datetime] = None,
     ):
-        """Assign role to user"""
-        doc = {
-            "user_id": ObjectId(user_id),
-            "role_id": ObjectId(role_id),
-            "assigned_at": datetime.utcnow(),
-            "assigned_by": ObjectId(assigned_by) if assigned_by else None,
-            "expires_at": expires_at
-        }
-        
-        # Use upsert to avoid duplicates
-        await self.user_roles.update_one(
-            {"user_id": ObjectId(user_id), "role_id": ObjectId(role_id)},
-            {"$set": doc},
-            upsert=True
+        uid = BaseRepository.parse_id(user_id)
+        rid = BaseRepository.parse_id(role_id)
+        if not uid or not rid:
+            return
+        assigned_by_id = BaseRepository.parse_id(assigned_by) if assigned_by else None
+        stmt = (
+            pg_insert(UserRole)
+            .values(
+                user_id=uid,
+                role_id=rid,
+                assigned_at=datetime.utcnow(),
+                assigned_by=assigned_by_id,
+                expires_at=expires_at,
+            )
+            .on_conflict_do_update(
+                index_elements=["user_id", "role_id"],
+                set_={
+                    "assigned_at": datetime.utcnow(),
+                    "assigned_by": assigned_by_id,
+                    "expires_at": expires_at,
+                },
+            )
         )
-        
-        logger.info(f"Assigned role {role_id} to user {user_id}")
-    
-    async def remove_role_from_user(
-        self, 
-        user_id: str, 
-        role_id: str
-    ) -> bool:
-        """Remove role from user"""
-        result = await self.user_roles.delete_one({
-            "user_id": ObjectId(user_id),
-            "role_id": ObjectId(role_id)
-        })
-        
-        return result.deleted_count > 0
-    
+        await self.session.execute(stmt)
+        role = await self.session.get(Role, rid)
+        user = await self.session.get(User, uid)
+        if role and user:
+            user.role = role.code
+            user.updated_at = datetime.utcnow()
+        logger.info("Assigned role %s to user %s", role_id, user_id)
+
+    async def remove_role_from_user(self, user_id: str, role_id: str) -> bool:
+        uid = BaseRepository.parse_id(user_id)
+        rid = BaseRepository.parse_id(role_id)
+        if not uid or not rid:
+            return False
+        result = await self.session.execute(
+            delete(UserRole).where(UserRole.user_id == uid, UserRole.role_id == rid)
+        )
+        if (result.rowcount or 0) == 0:
+            return False
+        remaining = await self.get_user_roles(user_id)
+        user = await self.session.get(User, uid)
+        if user:
+            user.role = remaining[0].code if remaining else "student"
+            user.updated_at = datetime.utcnow()
+        return True
+
     async def get_user_roles(self, user_id: str) -> List[RoleResponse]:
-        """
-        Get all active roles of a user
-        
-        Filters out expired roles
-        """
-        pipeline = [
-            {"$match": {
-                "user_id": ObjectId(user_id),
-                "$or": [
-                    {"expires_at": None},
-                    {"expires_at": {"$gt": datetime.utcnow()}}
-                ]
-            }},
-            {"$lookup": {
-                "from": "roles",
-                "localField": "role_id",
-                "foreignField": "_id",
-                "as": "role"
-            }},
-            {"$unwind": "$role"},
-            {"$match": {"role.is_active": True}},
-            {"$replaceRoot": {"newRoot": "$role"}}
-        ]
-        
-        cursor = self.user_roles.aggregate(pipeline)
-        results = []
-        async for doc in cursor:
-            perm_count = await self.role_permissions.count_documents({"role_id": doc["_id"]})
-            doc["_id"] = str(doc["_id"])
-            doc["permission_count"] = perm_count
-            results.append(RoleResponse(**doc))
-        
-        return results
-    
+        uid = BaseRepository.parse_id(user_id)
+        if not uid:
+            return []
+        now = datetime.utcnow()
+        result = await self.session.execute(
+            select(Role)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(
+                UserRole.user_id == uid,
+                Role.is_active.is_(True),
+                or_(UserRole.expires_at.is_(None), UserRole.expires_at > now),
+            )
+        )
+        roles = result.scalars().all()
+        out = []
+        for role in roles:
+            out.append(self._role_response(role, await self._perm_count(role.id)))
+        return out
+
     async def get_user_permissions(self, user_id: str) -> List[PermissionResponse]:
-        """
-        Get ALL unique permissions của user (từ tất cả roles)
-        
-        Sử dụng aggregation pipeline phức tạp:
-        1. Get user roles (active, not expired)
-        2. Join với role_permissions
-        3. Join với permissions
-        4. Remove duplicates
-        """
-        pipeline = [
-            # Match user roles
-            {"$match": {
-                "user_id": ObjectId(user_id),
-                "$or": [
-                    {"expires_at": None},
-                    {"expires_at": {"$gt": datetime.utcnow()}}
-                ]
-            }},
-            # Join with active roles only
-            {"$lookup": {
-                "from": "roles",
-                "localField": "role_id",
-                "foreignField": "_id",
-                "as": "role"
-            }},
-            {"$unwind": "$role"},
-            {"$match": {"role.is_active": True}},
-            # Join with role_permissions
-            {"$lookup": {
-                "from": "role_permissions",
-                "localField": "role_id",
-                "foreignField": "role_id",
-                "as": "role_perms"
-            }},
-            {"$unwind": "$role_perms"},
-            # Join with permissions
-            {"$lookup": {
-                "from": "permissions",
-                "localField": "role_perms.permission_id",
-                "foreignField": "_id",
-                "as": "permission"
-            }},
-            {"$unwind": "$permission"},
-            # Remove duplicates
-            {"$group": {
-                "_id": "$permission._id",
-                "permission": {"$first": "$permission"}
-            }},
-            {"$replaceRoot": {"newRoot": "$permission"}}
-        ]
-        
-        cursor = self.user_roles.aggregate(pipeline)
-        results = []
-        async for doc in cursor:
-            doc["_id"] = str(doc["_id"])
-            results.append(PermissionResponse(**doc))
-        
-        return results
+        uid = BaseRepository.parse_id(user_id)
+        if not uid:
+            return []
+        now = datetime.utcnow()
+        result = await self.session.execute(
+            select(Permission)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .join(UserRole, UserRole.role_id == RolePermission.role_id)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(
+                UserRole.user_id == uid,
+                Role.is_active.is_(True),
+                or_(UserRole.expires_at.is_(None), UserRole.expires_at > now),
+            )
+            .distinct()
+        )
+        return [self._perm_response(p) for p in result.scalars().all()]

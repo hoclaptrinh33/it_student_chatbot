@@ -31,8 +31,10 @@ airc_internal_chatbot_core/
 
 ### Yêu cầu:
 - Python 3.10+
-- MongoDB
+- PostgreSQL 15 (`DATABASE_URL=postgresql+asyncpg://...`)
 - Redis (cho background jobs)
+
+Volume Postgres cũ: `psql ... -f migrations/002_align_rag_schema.sql`
 
 ### Bước 1: Sao chép cấu hình
 Copy file `.env.example` thành `.env` và điền key:

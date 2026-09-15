@@ -1,9 +1,8 @@
-"""Runtime LLM settings: MongoDB document with .env fallback."""
+"""Runtime LLM settings: Postgres system_settings row with .env fallback."""
 from typing import Any, Dict, Optional
 
 from app.core.config import settings
 from app.core.tts_voices import normalize_tts_voice
-from app.models.database import Collections
 from app.models.settings_schemas import SystemLLMSettingsResponse, SystemLLMSettingsUpdate
 from app.repositories.system_settings_repository import SystemSettingsRepository
 from app.services.llm_resolve import mask_api_key, normalize_base_url
@@ -52,19 +51,18 @@ async def get_effective_llm_settings() -> Dict[str, Any]:
     """
     Effective LLM connection used by chat/processing.
     Cached after a successful DB read. Env-only results are not cached
-    so a late Mongo connection still gets picked up.
+    so a late Postgres connection still gets picked up.
     """
     global _cache
     if _cache is not None:
         return _cache
 
-    from app.core.database import mongodb
+    from app.core.database import SessionLocal
+    from app.repositories.system_settings_repository import SystemSettingsRepository
 
-    db = getattr(mongodb, "db", None)
-    if db is None:
-        return _from_env()
     try:
-        doc = await db[Collections.SYSTEM_SETTINGS].find_one({"_id": "llm"})
+        async with SessionLocal() as session:
+            doc = await SystemSettingsRepository(session).get_llm()
     except Exception:
         return _from_env()
 

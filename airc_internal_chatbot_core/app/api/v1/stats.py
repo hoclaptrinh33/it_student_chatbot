@@ -5,11 +5,15 @@ Provides dashboard statistics and system metrics
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import List
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from app.core import get_database
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_session
+from app.models.orm import Chatbot, Dataset, Session as ChatSession
 from app.services.cache_service import semantic_cache_service
 from app.models.auth import User, Permission
 from app.api.dependencies import require_permission, get_session_repo
@@ -45,51 +49,48 @@ class RecentActivity(BaseModel):
     timestamp: datetime
 
 
+async def _count(session: AsyncSession, stmt) -> int:
+    result = await session.execute(stmt)
+    return int(result.scalar_one() or 0)
+
+
 @router.get("/dashboard", response_model=DashboardStats)
 async def get_dashboard_stats(
     current_user: User = Depends(require_permission(Permission.ANALYTICS_VIEW)),
     session_repo=Depends(get_session_repo),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Get dashboard statistics for admin/teacher view
     """
     try:
-        db = await get_database()
-        
-        # Count collections
-        chatbot_count = await db.chatbots.count_documents({})
-        dataset_count = await db.datasets.count_documents({})
-        conversation_count = await db.conversations.count_documents({})
-        
-        # Count users from auth service (if available) - for now count from conversations
-        # Get unique user_ids from conversations
-        user_ids = await db.conversations.distinct("user_id")
-        user_count = len(user_ids) if user_ids else 0
-        
-        # Count chunks in qdrant (approximate from datasets)
-        total_chunks = 0
-        datasets = await db.datasets.find({}, {"chunk_count": 1}).to_list(None)
-        for ds in datasets:
-            total_chunks += ds.get("chunk_count", 0)
-        
-        # Count datasets being processed
-        datasets_processing = await db.datasets.count_documents({
-            "status": {"$in": ["processing", "pending"]}
-        })
-        
-        # Count conversations today
+        chatbot_count = await _count(session, select(func.count()).select_from(Chatbot))
+        dataset_count = await _count(session, select(func.count()).select_from(Dataset))
+        conversation_count = await _count(session, select(func.count()).select_from(ChatSession))
+        user_count = await _count(
+            session, select(func.count(func.distinct(ChatSession.user_id)))
+        )
+
+        total_chunks_result = await session.execute(select(func.coalesce(func.sum(Dataset.total_chunks), 0)))
+        total_chunks = int(total_chunks_result.scalar_one() or 0)
+
+        datasets_processing = await _count(
+            session,
+            select(func.count()).select_from(Dataset).where(Dataset.status.in_(["processing", "pending"])),
+        )
+
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        conversations_today = await db.conversations.count_documents({
-            "created_at": {"$gte": today_start}
-        })
-        
-        # Get cache stats
+        conversations_today = await _count(
+            session,
+            select(func.count()).select_from(ChatSession).where(ChatSession.created_at >= today_start),
+        )
+
         cache_stats = semantic_cache_service.get_stats()
         cache_hit_rate = 0.0
         if cache_stats.get("hits", 0) + cache_stats.get("misses", 0) > 0:
-            cache_hit_rate = (cache_stats.get("hits", 0) / 
+            cache_hit_rate = (cache_stats.get("hits", 0) /
                            (cache_stats.get("hits", 0) + cache_stats.get("misses", 0))) * 100
-        
+
         avg_latency_ms = await session_repo.get_average_latency_ms()
         avg_response_time = round((avg_latency_ms or 0) / 1000.0, 2)
 
@@ -98,7 +99,7 @@ async def get_dashboard_stats(
         accuracy_rate = (
             round((feedback_counts.get("up", 0) / rated) * 100, 1) if rated else 0.0
         )
-        
+
         return DashboardStats(
             chatbot_count=chatbot_count,
             dataset_count=dataset_count,
@@ -111,7 +112,7 @@ async def get_dashboard_stats(
             conversations_today=conversations_today,
             datasets_processing=datasets_processing
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting dashboard stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -121,41 +122,44 @@ async def get_dashboard_stats(
 async def get_recent_activity(
     limit: int = 5,
     current_user: User = Depends(require_permission(Permission.ANALYTICS_VIEW)),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Get recent system activities for dashboard
     """
     try:
-        db = await get_database()
         activities = []
-        
-        # Get recent chatbot updates
-        chatbots = await db.chatbots.find({}).sort("updated_at", -1).limit(2).to_list(None)
-        for bot in chatbots:
+
+        chatbot_result = await session.execute(
+            select(Chatbot).order_by(Chatbot.updated_at.desc().nullslast()).limit(2)
+        )
+        for bot in chatbot_result.scalars().all():
             activities.append(RecentActivity(
                 type="chatbot",
-                title=f'Chatbot "{bot.get("name", "Unknown")}"',
+                title=f'Chatbot "{bot.name or "Unknown"}"',
                 description="được cập nhật",
-                timestamp=bot.get("updated_at", datetime.utcnow())
+                timestamp=bot.updated_at or bot.created_at or datetime.utcnow()
             ))
-        
-        # Get recent dataset processing
-        datasets = await db.datasets.find({
-            "status": "completed"
-        }).sort("updated_at", -1).limit(2).to_list(None)
-        for ds in datasets:
+
+        dataset_result = await session.execute(
+            select(Dataset)
+            .where(Dataset.status.in_(["completed", "ready"]))
+            .order_by(Dataset.updated_at.desc().nullslast())
+            .limit(2)
+        )
+        for ds in dataset_result.scalars().all():
             activities.append(RecentActivity(
                 type="dataset",
-                title=f'Dataset "{ds.get("name", "Unknown")}"',
+                title=f'Dataset "{ds.name or "Unknown"}"',
                 description="xử lý hoàn tất",
-                timestamp=ds.get("updated_at", datetime.utcnow())
+                timestamp=ds.updated_at or ds.created_at or datetime.utcnow()
             ))
-        
-        # Get today's conversation count
+
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        conv_today = await db.conversations.count_documents({
-            "created_at": {"$gte": today_start}
-        })
+        conv_today = await _count(
+            session,
+            select(func.count()).select_from(ChatSession).where(ChatSession.created_at >= today_start),
+        )
         if conv_today > 0:
             activities.append(RecentActivity(
                 type="conversation",
@@ -163,11 +167,10 @@ async def get_recent_activity(
                 description="trong hôm nay",
                 timestamp=datetime.utcnow()
             ))
-        
-        # Sort by timestamp desc and limit
+
         activities.sort(key=lambda x: x.timestamp, reverse=True)
         return activities[:limit]
-        
+
     except Exception as e:
         logger.error(f"Error getting recent activity: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,4 +1,6 @@
 """
+DEPRECATED: Mongo seeder. Do not import from the Auth app runtime.
+
 Backfill department field for existing users.
 
 Usage:

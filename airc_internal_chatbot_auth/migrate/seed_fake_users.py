@@ -1,4 +1,6 @@
 """
+DEPRECATED: Mongo seeder. Do not import from the Auth app runtime.
+
 Seed bulk fake users for local testing.
 
 This script creates ~50 users distributed by roles and assigns role mappings

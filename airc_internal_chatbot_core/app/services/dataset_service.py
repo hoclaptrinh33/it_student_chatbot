@@ -76,7 +76,7 @@ class DatasetService:
             from app.repositories.chatbot_repository import ChatbotRepository
             
             # Use same db instance as dataset_repo
-            chatbot_repo = ChatbotRepository(self.dataset_repo.db)
+            chatbot_repo = ChatbotRepository(self.dataset_repo.session)
             
             dataset_id = dataset["id"]
             for chatbot_id in chatbot_ids:

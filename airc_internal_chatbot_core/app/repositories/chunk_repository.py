@@ -1,18 +1,63 @@
 """
 Chunk Repository - Data access cho text chunks
 """
-import re  # Required for regex escape in search_by_text
+from typing import List, Optional
+
+from sqlalchemy import and_, delete, or_, select
+
+from app.models.orm import Chunk
 from app.repositories.base_repository import BaseRepository
-from app.models.database import Collections
-from typing import Optional, List
+
+
+def _ilike_pattern(word: str) -> str:
+    escaped = word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
 
 
 class ChunkRepository(BaseRepository):
     """Repository cho Chunk operations"""
-    
-    def __init__(self, db):
-        super().__init__(db, Collections.CHUNKS)
-    
+
+    def __init__(self, session):
+        super().__init__(session, Chunk)
+
+    def _build_chunk(
+        self,
+        dataset_id,
+        dataset_file_id,
+        file_id,
+        chunk: dict,
+        is_parent: bool = False,
+        parent_chunk_id=None,
+    ) -> Chunk:
+        extra = {}
+        if chunk.get("vector_id") is not None:
+            extra["vector_id"] = chunk.get("vector_id")
+        if chunk.get("row_range") is not None:
+            extra["row_range"] = chunk.get("row_range")
+        return Chunk(
+            dataset_id=dataset_id,
+            dataset_file_id=dataset_file_id,
+            file_id=file_id,
+            chunk_index=chunk.get("chunk_index", 0),
+            text=chunk.get("text") or "",
+            embedding_text=chunk.get("embedding_text"),
+            context_enriched_text=chunk.get("context_enriched_text", chunk.get("text")),
+            heading_path=chunk.get("heading_path") or [],
+            is_parent=is_parent,
+            parent_chunk_id=parent_chunk_id,
+            domain=chunk.get("domain", "general"),
+            language=chunk.get("language", "vi"),
+            section_type=chunk.get("section_type", "plain"),
+            chunk_role=chunk.get("chunk_role", "parent" if is_parent else ("child" if parent_chunk_id else "standalone")),
+            is_table=bool(chunk.get("is_table", False)),
+            table_caption=chunk.get("table_caption"),
+            table_header=chunk.get("table_header") or [],
+            quality_flags=chunk.get("quality_flags") or [],
+            page=chunk.get("page"),
+            extra=extra,
+            qdrant_point_id=str(chunk["vector_id"]) if chunk.get("vector_id") is not None else None,
+        )
+
     async def create_chunk(
         self,
         dataset_id: str,
@@ -20,20 +65,23 @@ class ChunkRepository(BaseRepository):
         file_id: str,
         chunk_index: int,
         text: str,
-        vector_id: Optional[int] = None
+        vector_id: Optional[int] = None,
     ) -> dict:
-        """Tạo chunk mới"""
-        doc = {
-            "dataset_id": dataset_id,
-            "dataset_file_id": dataset_file_id,
-            "file_id": file_id,
-            "chunk_index": chunk_index,
-            "text": text,
-            "vector_id": vector_id
-        }
-        doc_id = await self.insert_one(doc)
-        doc["id"] = doc_id
-        return doc
+        ds_id = self.parse_id(dataset_id)
+        df_id = self.parse_id(dataset_file_id)
+        f_id = self.parse_id(file_id)
+        row = Chunk(
+            dataset_id=ds_id,
+            dataset_file_id=df_id,
+            file_id=f_id,
+            chunk_index=chunk_index,
+            text=text,
+            extra={"vector_id": vector_id} if vector_id is not None else {},
+            qdrant_point_id=str(vector_id) if vector_id is not None else None,
+        )
+        self.session.add(row)
+        await self.session.flush()
+        return self.serialize_row(row)
 
     async def create_chunks(
         self,
@@ -42,173 +90,79 @@ class ChunkRepository(BaseRepository):
         file_id: str,
         texts: List[str] = None,
         vectors: List[List[float]] = None,
-        chunks_data: List[dict] = None
+        chunks_data: List[dict] = None,
     ) -> List[str]:
-        """
-        Tạo nhiều chunks (batch insert).
-        Hỗ trợ cấu trúc Parent-Child và Rich Context.
-        """
-        docs = []
+        ds_id = self.parse_id(dataset_id)
+        df_id = self.parse_id(dataset_file_id)
+        f_id = self.parse_id(file_id)
+        rows = []
         if chunks_data:
             for chunk in chunks_data:
-                doc = {
-                    "dataset_id": dataset_id,
-                    "dataset_file_id": dataset_file_id,
-                    "file_id": file_id,
-                    "chunk_index": chunk.get("chunk_index"),
-                    "text": chunk.get("text"),
-                    "embedding_text": chunk.get("embedding_text"),
-                    "context_enriched_text": chunk.get("context_enriched_text"),
-                    "heading_path": chunk.get("heading_path", []),
-                    "is_parent": chunk.get("is_parent", False),
-                    "parent_chunk_id": chunk.get("parent_chunk_id"),
-                    "vector_id": chunk.get("vector_id"),
-                    "domain": chunk.get("domain", "general"),
-                    "language": chunk.get("language", "vi"),
-                    "section_type": chunk.get("section_type", "plain"),
-                    "chunk_role": chunk.get("chunk_role", "standalone"),
-                    "is_table": chunk.get("is_table", False),
-                    "table_caption": chunk.get("table_caption"),
-                    "table_header": chunk.get("table_header", []),
-                    "row_range": chunk.get("row_range"),
-                    "quality_flags": chunk.get("quality_flags", [])
-                }
-                docs.append(doc)
+                rows.append(
+                    self._build_chunk(
+                        ds_id,
+                        df_id,
+                        f_id,
+                        chunk,
+                        is_parent=bool(chunk.get("is_parent", False)),
+                        parent_chunk_id=self.parse_id(chunk["parent_chunk_id"]) if chunk.get("parent_chunk_id") else None,
+                    )
+                )
         else:
-            # Fallback cơ chế cũ chỉ truyền texts
             for i, text in enumerate(texts or []):
-                doc = {
-                    "dataset_id": dataset_id,
-                    "dataset_file_id": dataset_file_id,
-                    "file_id": file_id,
-                    "chunk_index": i,
-                    "text": text,
-                    "embedding_text": text,
-                    "context_enriched_text": text,
-                    "heading_path": [],
-                    "is_parent": False,
-                    "parent_chunk_id": None,
-                    "vector_id": None,
-                    "domain": "general",
-                    "language": "vi",
-                    "section_type": "plain",
-                    "chunk_role": "standalone",
-                    "is_table": False,
-                    "table_caption": None,
-                    "table_header": [],
-                    "row_range": None,
-                    "quality_flags": []
-                }
-                docs.append(doc)
-            
-        if not docs:
+                rows.append(
+                    self._build_chunk(
+                        ds_id,
+                        df_id,
+                        f_id,
+                        {"chunk_index": i, "text": text, "embedding_text": text, "context_enriched_text": text},
+                    )
+                )
+        if not rows:
             return []
-            
-        result = await self.collection.insert_many(docs)
-        return [str(uid) for uid in result.inserted_ids]
+        self.session.add_all(rows)
+        await self.session.flush()
+        return [str(row.id) for row in rows]
 
     async def get_parent_chunks_by_ids(self, parent_ids: List[str]) -> List[dict]:
-        """Lấy danh sách các chunk cha theo danh sách ID"""
-        oids = [self.to_object_id(pid) for pid in parent_ids if pid]
-        oids = [oid for oid in oids if oid]
-        if not oids:
+        uids = [uid for uid in (self.parse_id(pid) for pid in parent_ids if pid) if uid]
+        if not uids:
             return []
-        
-        docs = await self.find_many({"_id": {"$in": oids}})
-        return self.serialize_docs(docs)
+        result = await self.session.execute(select(Chunk).where(Chunk.id.in_(uids)))
+        return self.serialize_rows(result.scalars().all())
 
     async def create_chunks_advanced(
         self,
         dataset_id: str,
         dataset_file_id: str,
         file_id: str,
-        chunks: List[dict]
+        chunks: List[dict],
     ) -> List[dict]:
-        """
-        Tạo nhiều chunks với cấu trúc nâng cao (Parent-Child, Heading Path, Context Enriched)
-        """
         if not chunks:
             return []
-            
-        # 1. Tách và chèn các Parent Chunks trước để lấy ObjectId
+        ds_id = self.parse_id(dataset_id)
+        df_id = self.parse_id(dataset_file_id)
+        f_id = self.parse_id(file_id)
+
         parent_chunks = [c for c in chunks if c.get("is_parent") is True]
-        parent_map = {} # map chunk_index -> Mongo ID string
-        
+        parent_map = {}
         for p_chunk in parent_chunks:
-            doc = {
-                "dataset_id": dataset_id,
-                "dataset_file_id": dataset_file_id,
-                "file_id": file_id,
-                "chunk_index": p_chunk["chunk_index"],
-                "text": p_chunk["text"],
-                "embedding_text": p_chunk.get("embedding_text"),
-                "context_enriched_text": p_chunk.get("context_enriched_text", p_chunk["text"]),
-                "heading_path": p_chunk.get("heading_path", []),
-                "is_parent": True,
-                "parent_chunk_id": None,
-                "vector_id": None,
-                "domain": p_chunk.get("domain", "general"),
-                "language": p_chunk.get("language", "vi"),
-                "section_type": p_chunk.get("section_type", "plain"),
-                "chunk_role": p_chunk.get("chunk_role", "parent"),
-                "is_table": p_chunk.get("is_table", False),
-                "table_caption": p_chunk.get("table_caption"),
-                "table_header": p_chunk.get("table_header", []),
-                "row_range": p_chunk.get("row_range"),
-                "quality_flags": p_chunk.get("quality_flags", [])
-            }
-            inserted_id = await self.insert_one(doc)
-            p_chunk["id"] = inserted_id
-            parent_map[p_chunk["chunk_index"]] = inserted_id
-            
-        # 2. Chuẩn bị chèn các Child Chunks và các Chunks độc lập
+            row = self._build_chunk(ds_id, df_id, f_id, p_chunk, is_parent=True)
+            self.session.add(row)
+            await self.session.flush()
+            p_chunk["id"] = str(row.id)
+            parent_map[p_chunk["chunk_index"]] = row.id
+
         other_chunks = [c for c in chunks if not c.get("is_parent")]
-        docs_to_insert = []
-        
         for c_chunk in other_chunks:
             p_idx = c_chunk.get("parent_chunk_index")
             p_id = parent_map.get(p_idx) if p_idx is not None else None
-            
-            doc = {
-                "dataset_id": dataset_id,
-                "dataset_file_id": dataset_file_id,
-                "file_id": file_id,
-                "chunk_index": c_chunk["chunk_index"],
-                "text": c_chunk["text"],
-                "embedding_text": c_chunk.get("embedding_text"),
-                "context_enriched_text": c_chunk.get("context_enriched_text", c_chunk["text"]),
-                "heading_path": c_chunk.get("heading_path", []),
-                "is_parent": False,
-                "parent_chunk_id": p_id,
-                "vector_id": None,
-                "domain": c_chunk.get("domain", "general"),
-                "language": c_chunk.get("language", "vi"),
-                "section_type": c_chunk.get("section_type", "plain"),
-                "chunk_role": c_chunk.get("chunk_role", "child" if p_id else "standalone"),
-                "is_table": c_chunk.get("is_table", False),
-                "table_caption": c_chunk.get("table_caption"),
-                "table_header": c_chunk.get("table_header", []),
-                "row_range": c_chunk.get("row_range"),
-                "quality_flags": c_chunk.get("quality_flags", [])
-            }
-            docs_to_insert.append((c_chunk, doc))
-            
-        if docs_to_insert:
-            # Thực hiện chèn nhiều tài liệu cùng lúc
-            insert_payloads = [doc for _, doc in docs_to_insert]
-            result = await self.collection.insert_many(insert_payloads)
-            
-            # Map ngược lại ObjectId cho từng chunk
-            for i, inserted_id in enumerate(result.inserted_ids):
-                chunk_obj, _ = docs_to_insert[i]
-                chunk_obj["id"] = str(inserted_id)
-                # Cập nhật trường parent_chunk_id trong chunk_obj để trả về
-                p_idx = chunk_obj.get("parent_chunk_index")
-                chunk_obj["parent_chunk_id"] = parent_map.get(p_idx) if p_idx is not None else None
-                
-        # Trả về danh sách chunks ban đầu đã được gán id
+            row = self._build_chunk(ds_id, df_id, f_id, c_chunk, is_parent=False, parent_chunk_id=p_id)
+            self.session.add(row)
+            await self.session.flush()
+            c_chunk["id"] = str(row.id)
+            c_chunk["parent_chunk_id"] = str(p_id) if p_id else None
         return chunks
-
 
     _KEYWORD_STOPWORDS = {
         "hãy", "về", "của", "là", "và", "cho", "trong", "một", "các", "này",
@@ -220,12 +174,11 @@ class ChunkRepository(BaseRepository):
     }
 
     async def search_by_text(
-        self, 
-        query: str, 
-        dataset_file_ids: List[str], 
-        limit: int = 5
+        self,
+        query: str,
+        dataset_file_ids: List[str],
+        limit: int = 5,
     ) -> List[dict]:
-        """Tìm kiếm chunks bằng Text Regex (Fallback)"""
         raw_words = [w.strip(".,?!:;\"'()[]") for w in query.strip().split()]
         keywords = [
             w for w in raw_words
@@ -236,82 +189,93 @@ class ChunkRepository(BaseRepository):
         if not keywords or not any(keywords):
             return []
 
-        base = {"dataset_file_id": {"$in": dataset_file_ids}}
-        and_conditions = [
-            {"text": {"$regex": re.escape(word), "$options": "i"}}
-            for word in keywords
-        ]
-        docs = await self.collection.find({**base, "$and": and_conditions}).limit(limit).to_list(length=limit)
-        if docs:
-            return self.serialize_docs(docs)
-
-        # Câu hỏi kiểu "Hãy giới thiệu về AIRC" không xuất hiện nguyên văn trong tài liệu
-        or_conditions = [
-            {"text": {"$regex": re.escape(word), "$options": "i"}}
-            for word in keywords
-            if len(word) >= 3
-        ]
-        if or_conditions:
-            docs = await self.collection.find({**base, "$or": or_conditions}).limit(limit).to_list(length=limit)
-        return self.serialize_docs(docs)
-    
-    async def get_by_dataset_file(
-        self, 
-        dataset_id: str, 
-        dataset_file_id: str
-    ) -> List[dict]:
-        """Lấy tất cả chunks của dataset file"""
-        docs = await self.find_many(
-            {
-                "dataset_id": dataset_id,
-                "dataset_file_id": dataset_file_id
-            },
-            sort=[("chunk_index", 1)]
-        )
-        return self.serialize_docs(docs)
-    
-    async def get_by_ids(self, chunk_ids: List[str]) -> List[dict]:
-        """Lấy chunks theo list ID (cho retrieval từ Qdrant)"""
-        oids = [self.to_object_id(cid) for cid in chunk_ids]
-        oids = [oid for oid in oids if oid]
-        if not oids:
+        ids = [uid for uid in (self.parse_id(i) for i in dataset_file_ids) if uid]
+        if not ids:
             return []
-        
-        docs = await self.find_many({"_id": {"$in": oids}})
-        return self.serialize_docs(docs)
+
+        and_conditions = [Chunk.text.ilike(_ilike_pattern(word)) for word in keywords]
+        result = await self.session.execute(
+            select(Chunk).where(Chunk.dataset_file_id.in_(ids), and_(*and_conditions)).limit(limit)
+        )
+        docs = self.serialize_rows(result.scalars().all())
+        if docs:
+            return docs
+
+        or_words = [w for w in keywords if len(w) >= 3]
+        if not or_words:
+            return []
+        or_conditions = [Chunk.text.ilike(_ilike_pattern(word)) for word in or_words]
+        result = await self.session.execute(
+            select(Chunk).where(Chunk.dataset_file_id.in_(ids), or_(*or_conditions)).limit(limit)
+        )
+        return self.serialize_rows(result.scalars().all())
+
+    async def get_by_dataset_file(self, dataset_id: str, dataset_file_id: str) -> List[dict]:
+        ds_id = self.parse_id(dataset_id)
+        df_id = self.parse_id(dataset_file_id)
+        if not ds_id or not df_id:
+            return []
+        result = await self.session.execute(
+            select(Chunk)
+            .where(Chunk.dataset_id == ds_id, Chunk.dataset_file_id == df_id)
+            .order_by(Chunk.chunk_index.asc())
+        )
+        return self.serialize_rows(result.scalars().all())
+
+    async def get_by_ids(self, chunk_ids: List[str]) -> List[dict]:
+        uids = [uid for uid in (self.parse_id(cid) for cid in chunk_ids) if uid]
+        if not uids:
+            return []
+        result = await self.session.execute(select(Chunk).where(Chunk.id.in_(uids)))
+        return self.serialize_rows(result.scalars().all())
 
     async def get_by_vector_ids(
         self,
         dataset_id: str,
         vector_ids: List[int],
-        enabled_df_ids: List[str]
+        enabled_df_ids: List[str],
     ) -> List[dict]:
-        """[DEPRECATED] Lấy chunks theo vector IDs (FAISS)"""
-        docs = await self.find_many({
-            "dataset_id": dataset_id,
-            "dataset_file_id": {"$in": enabled_df_ids},
-            "vector_id": {"$in": vector_ids}
-        })
-        return self.serialize_docs(docs)
-    
+        ds_id = self.parse_id(dataset_id)
+        df_ids = [uid for uid in (self.parse_id(i) for i in enabled_df_ids) if uid]
+        if not ds_id or not df_ids or not vector_ids:
+            return []
+        point_ids = [str(v) for v in vector_ids]
+        result = await self.session.execute(
+            select(Chunk).where(
+                Chunk.dataset_id == ds_id,
+                Chunk.dataset_file_id.in_(df_ids),
+                Chunk.qdrant_point_id.in_(point_ids),
+            )
+        )
+        return self.serialize_rows(result.scalars().all())
+
     async def update_vector_id(self, chunk_id: str, vector_id: int) -> bool:
-        """Cập nhật vector_id cho chunk"""
-        oid = self.to_object_id(chunk_id)
-        if not oid:
+        uid = self.parse_id(chunk_id)
+        if not uid:
             return False
-        return await self.update_one({"_id": oid}, {"vector_id": vector_id})
-    
-    async def delete_by_dataset_file(
-        self, 
-        dataset_id: str, 
-        dataset_file_id: str
-    ) -> int:
-        """Xóa tất cả chunks của dataset file"""
-        return await self.delete_many({
-            "dataset_id": dataset_id,
-            "dataset_file_id": dataset_file_id
-        })
-    
+        row = await self.session.get(Chunk, uid)
+        if not row:
+            return False
+        extra = dict(row.extra or {})
+        extra["vector_id"] = vector_id
+        row.extra = extra
+        row.qdrant_point_id = str(vector_id)
+        await self.session.flush()
+        return True
+
+    async def delete_by_dataset_file(self, dataset_id: str, dataset_file_id: str) -> int:
+        ds_id = self.parse_id(dataset_id)
+        df_id = self.parse_id(dataset_file_id)
+        if not ds_id or not df_id:
+            return 0
+        result = await self.session.execute(
+            delete(Chunk).where(Chunk.dataset_id == ds_id, Chunk.dataset_file_id == df_id)
+        )
+        return result.rowcount or 0
+
     async def delete_by_dataset(self, dataset_id: str) -> int:
-        """Xóa tất cả chunks của dataset"""
-        return await self.delete_many({"dataset_id": dataset_id})
+        uid = self.parse_id(dataset_id)
+        if not uid:
+            return 0
+        result = await self.session.execute(delete(Chunk).where(Chunk.dataset_id == uid))
+        return result.rowcount or 0

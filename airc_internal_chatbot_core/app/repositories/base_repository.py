@@ -1,81 +1,66 @@
 """
-Base Repository - CRUD operations chung cho tất cả repositories
+Base Repository - UUID parse + row serialization for dict APIs
 """
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import Optional, List, Dict, Any
-from bson import ObjectId
-from bson.errors import InvalidId
-import logging
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Optional
+from uuid import UUID
 
-logger = logging.getLogger(__name__)
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class BaseRepository:
-    """Repository base class với CRUD operations cơ bản"""
-    
-    def __init__(self, db: AsyncIOMotorDatabase, collection_name: str):
-        self.db = db
-        self.collection = db[collection_name]
-    
-    async def find_one(self, filter_dict: dict) -> Optional[dict]:
-        """Tìm một document"""
-        return await self.collection.find_one(filter_dict)
-    
-    async def find_many(
-        self, 
-        filter_dict: dict, 
-        skip: int = 0, 
-        limit: int = 100,
-        sort: Optional[List[tuple]] = None
-    ) -> List[dict]:
-        """Tìm nhiều documents"""
-        cursor = self.collection.find(filter_dict).skip(skip).limit(limit)
-        if sort:
-            cursor = cursor.sort(sort)
-        return await cursor.to_list(length=limit)
-    
-    async def count_documents(self, filter_dict: dict) -> int:
-        """Đếm số documents"""
-        return await self.collection.count_documents(filter_dict)
-    
-    async def insert_one(self, document: dict) -> str:
-        """Tạo một document mới"""
-        result = await self.collection.insert_one(document)
-        return str(result.inserted_id)
-    
-    async def update_one(self, filter_dict: dict, update_dict: dict) -> bool:
-        """Cập nhật một document"""
-        result = await self.collection.update_one(filter_dict, {"$set": update_dict})
-        return result.matched_count > 0
-    
-    async def delete_one(self, filter_dict: dict) -> bool:
-        """Xóa một document"""
-        result = await self.collection.delete_one(filter_dict)
-        return result.deleted_count > 0
-    
-    async def delete_many(self, filter_dict: dict) -> int:
-        """Xóa nhiều documents"""
-        result = await self.collection.delete_many(filter_dict)
-        return result.deleted_count
-    
+    """Repository base class. Callers receive dicts with id: str."""
+
+    def __init__(self, session: AsyncSession, model: type | None = None):
+        self.session = session
+        self.model = model
+
     @staticmethod
-    def to_object_id(id_str: str) -> Optional[ObjectId]:
-        """Convert string ID sang ObjectId"""
+    def parse_id(id_str: str) -> Optional[UUID]:
+        """UUID only. A Mongo 24-hex ObjectId is invalid."""
+        if id_str is None:
+            return None
         try:
-            return ObjectId(id_str)
-        except (InvalidId, TypeError):
+            return UUID(str(id_str))
+        except (ValueError, TypeError, AttributeError):
             return None
-    
+
     @staticmethod
-    def serialize_doc(doc: Optional[dict]) -> Optional[dict]:
-        """Serialize document: _id -> id"""
-        if not doc:
+    def serialize_value(value: Any) -> Any:
+        if isinstance(value, UUID):
+            return str(value)
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {k: BaseRepository.serialize_value(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [BaseRepository.serialize_value(v) for v in value]
+        return value
+
+    @staticmethod
+    def serialize_row(row) -> Optional[dict]:
+        if row is None:
             return None
-        if "_id" in doc:
-            doc["id"] = str(doc.pop("_id"))
-        return doc
-    
+        if isinstance(row, dict):
+            data = dict(row)
+        elif hasattr(row, "__table__"):
+            data = {c.name: getattr(row, c.name) for c in row.__table__.columns}
+        else:
+            data = {k: v for k, v in vars(row).items() if not k.startswith("_")}
+        if "_id" in data and "id" not in data:
+            data["id"] = data.pop("_id")
+        extra = data.get("extra")
+        out = {k: BaseRepository.serialize_value(v) for k, v in data.items() if k != "extra"}
+        if isinstance(extra, dict):
+            for key, value in extra.items():
+                out.setdefault(key, BaseRepository.serialize_value(value))
+        return out
+
     @staticmethod
-    def serialize_docs(docs: List[dict]) -> List[dict]:
-        """Serialize list of documents"""
-        return [BaseRepository.serialize_doc(d) for d in docs]
+    def serialize_rows(rows) -> list:
+        return [BaseRepository.serialize_row(r) for r in rows if r is not None]

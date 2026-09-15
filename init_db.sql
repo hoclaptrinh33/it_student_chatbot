@@ -190,7 +190,22 @@ CREATE TABLE chunks (
     text            TEXT NOT NULL,
     chunk_index     INTEGER NOT NULL DEFAULT 0,
     qdrant_point_id VARCHAR(64),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    embedding_text  TEXT,
+    context_enriched_text TEXT,
+    heading_path    TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    is_parent       BOOLEAN NOT NULL DEFAULT FALSE,
+    parent_chunk_id UUID REFERENCES chunks (id) ON DELETE SET NULL,
+    domain          VARCHAR(50),
+    language        VARCHAR(10) DEFAULT 'vi',
+    section_type    VARCHAR(50),
+    chunk_role      VARCHAR(50) DEFAULT 'standalone',
+    is_table        BOOLEAN NOT NULL DEFAULT FALSE,
+    table_caption   TEXT,
+    table_header    TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    quality_flags   TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    page            INTEGER,
+    extra           JSONB NOT NULL DEFAULT '{}'::JSONB
 );
 
 CREATE TABLE chatbots (
@@ -221,6 +236,9 @@ CREATE TABLE sessions (
     name       VARCHAR(255),
     user_id    UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     chatbot_id UUID REFERENCES chatbots (id) ON DELETE SET NULL,
+    parent_id  UUID REFERENCES sessions (id) ON DELETE SET NULL,
+    branch_message_index INTEGER,
+    conversation_summary TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -231,6 +249,7 @@ CREATE TABLE messages (
     role       VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content    TEXT NOT NULL,
     sources    JSONB,
+    extra      JSONB NOT NULL DEFAULT '{}'::JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -272,7 +291,13 @@ CREATE INDEX ix_sessions_chatbot ON sessions (chatbot_id);
 CREATE INDEX ix_messages_session ON messages (session_id, created_at);
 CREATE INDEX ix_dataset_files_dataset ON dataset_files (dataset_id);
 CREATE INDEX ix_chunks_dataset ON chunks (dataset_id);
+CREATE INDEX ix_chunks_parent ON chunks (parent_chunk_id);
+CREATE INDEX ix_chunks_file ON chunks (dataset_file_id);
 CREATE INDEX ix_chatbots_owner ON chatbots (owner_id);
+
+ALTER TABLE learning_materials
+    ADD COLUMN IF NOT EXISTS file_id UUID REFERENCES files (id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS dataset_id UUID REFERENCES datasets (id) ON DELETE SET NULL;
 
 -- =============================================================================
 -- 5. RULE ENGINE — recursive CTE + môn đủ điều kiện
@@ -644,12 +669,9 @@ VALUES (
         'search_mode', 'hybrid',
         'top_k', 5,
         'temperature', 0.3,
-        'no_context_behavior', 'fallback_llm',
+        'no_context_behavior', 'reject',
         'system_prompt',
-            'Bạn là Trợ lý Cố vấn Học tập & Tài liệu Khoa CNTT. '
-            'Ưu tiên dữ liệu quan hệ (môn tiên quyết, tín chỉ, kết quả học tập) khi tư vấn chọn môn. '
-            'Dùng tài liệu RAG để giải thích kiến thức và gợi ý giáo trình/slide/đề thi. '
-            'Không bịa mã môn, số tín chỉ hay điều kiện tiên quyết.'
+            'Bạn là Chatbot RAG nội bộ. CHỈ trả lời dựa trên [Knowledge]. CẤM bịa mã môn, tín chỉ, tiên quyết.'
     ),
     TRUE
 );
@@ -663,7 +685,11 @@ VALUES (
 INSERT INTO system_settings (id, config)
 VALUES (
     'singleton',
-    jsonb_build_object('app_name', 'IT Student Chatbot', 'persona', 'academic_advisor')
+    jsonb_build_object(
+        'app_name', 'IT Student Chatbot',
+        'persona', 'academic_advisor',
+        'academic_facts_enabled', false
+    )
 );
 
 -- =============================================================================

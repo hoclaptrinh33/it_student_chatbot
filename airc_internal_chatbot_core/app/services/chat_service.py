@@ -605,7 +605,7 @@ class ChatService:
             if file_ids:
                 file_repo = self.file_repo
                 if file_repo is None:
-                    file_repo = FileRepository(self.dataset_repo.db)
+                    file_repo = FileRepository(self.dataset_repo.session)
                 file_docs = await file_repo.get_by_ids(file_ids)
                 for file_doc in file_docs:
                     file_id_to_name_map[str(file_doc.get("id"))] = file_doc.get("name", "Unnamed File")

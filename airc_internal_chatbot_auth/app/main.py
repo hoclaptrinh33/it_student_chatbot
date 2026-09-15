@@ -8,7 +8,10 @@ from contextlib import asynccontextmanager
 import logging
 import os
 
-from app.core import settings, connect_to_mongo, close_mongo_connection
+from sqlalchemy import text
+
+from app.core import settings, connect_to_db, close_db
+from app.core.database import engine
 from app.core.rate_limiter import RateLimitMiddleware, rate_limiter
 from app.core.security_middleware import (
     SecurityHeadersMiddleware,
@@ -32,8 +35,8 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     # Startup
     logger.info("Auth Service starting up...")
-    await connect_to_mongo()
-    logger.info("✓ MongoDB connected")
+    await connect_to_db()
+    logger.info("✓ Postgres connected")
     logger.info("✓ Rate limiter initialized")
     logger.info("✓ Security middleware enabled")
     logger.info("Auth Service startup complete - Production Ready!")
@@ -43,7 +46,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Auth Service shutting down...")
     await rate_limiter.cleanup()  # Cleanup rate limiter
-    await close_mongo_connection()
+    await close_db()
     logger.info("Auth Service shutdown complete")
 
 
@@ -115,4 +118,6 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
     return {"status": "healthy", "service": "auth"}

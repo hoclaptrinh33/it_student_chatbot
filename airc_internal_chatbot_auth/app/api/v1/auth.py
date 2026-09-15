@@ -13,7 +13,9 @@ from app.api.dependencies import (
 )
 from app.services.auth_service import AuthService
 from app.services.password_reset_service import PasswordResetService
-from app.core.database import get_database
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_session
 from app.models.user import (
     UserCreate,
     UserUpdate,
@@ -241,7 +243,8 @@ async def verify_token(
             "id": str(user.id),
             "email": user.email,
             "full_name": user.full_name,
-            "role": user.role
+            "role": user.role,
+            "student_code": getattr(user, "student_code", None),
         }
         
     except HTTPException:
@@ -257,9 +260,10 @@ async def verify_token(
 
 def get_password_reset_service(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> PasswordResetService:
     return PasswordResetService(
-        db=get_database(),
+        session=session,
         user_repo=auth_service.user_repo,
         hash_password=AuthService.hash_password,
     )
@@ -313,7 +317,9 @@ async def get_me(
         full_name=current_user.full_name,
         role=current_user.role,
         is_active=current_user.is_active,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
+        student_code=getattr(current_user, "student_code", None),
+        department=getattr(current_user, "department", None),
     )
 
 
@@ -361,7 +367,9 @@ async def list_users(
             full_name=u.full_name,
             role=u.role,
             is_active=u.is_active,
-            created_at=u.created_at
+            created_at=u.created_at,
+            student_code=getattr(u, "student_code", None),
+            department=getattr(u, "department", None),
         ))
     return result
 
@@ -388,6 +396,8 @@ async def get_user(
         role=user.role,
         is_active=user.is_active,
         created_at=user.created_at,
+        student_code=getattr(user, "student_code", None),
+        department=getattr(user, "department", None),
     )
     
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -407,7 +417,9 @@ async def create_user_admin(
             full_name=user["full_name"],
             role=user["role"],
             is_active=user["is_active"],
-            created_at=user["created_at"]
+            created_at=user["created_at"],
+            student_code=user.get("student_code"),
+            department=user.get("department"),
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -440,7 +452,9 @@ async def update_user_admin(
             full_name=updated_user.full_name,
             role=updated_user.role,
             is_active=updated_user.is_active,
-            created_at=updated_user.created_at
+            created_at=updated_user.created_at,
+            student_code=getattr(updated_user, "student_code", None),
+            department=getattr(updated_user, "department", None),
         )
     except HTTPException: raise
     except Exception as e:

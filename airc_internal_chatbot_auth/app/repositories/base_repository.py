@@ -1,147 +1,61 @@
 """
-Base Repository - Abstract base class cho tất cả repositories
+Base Repository - UUID parse + row serialization for dict APIs
 """
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
-from bson import ObjectId
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Optional
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class BaseRepository:
-    """Base repository với common CRUD operations"""
-    
-    def __init__(self, db: AsyncIOMotorDatabase, collection_name: str):
-        """
-        Khởi tạo repository
-        
-        Args:
-            db: MongoDB database instance
-            collection_name: Tên collection
-        """
-        self.db = db
-        self.collection_name = collection_name
-        self.collection: AsyncIOMotorCollection = db[collection_name]
-    
+    """Base repository with UUID helpers. Repositories return dicts with id: str."""
+
+    def __init__(self, session: AsyncSession, model: type | None = None):
+        self.session = session
+        self.model = model
+
     @staticmethod
-    def to_object_id(id_str: str) -> Optional[ObjectId]:
-        """
-        Convert string to ObjectId
-        
-        Args:
-            id_str: String ID
-            
-        Returns:
-            ObjectId hoặc None nếu invalid
-        """
+    def parse_id(id_str: str) -> Optional[UUID]:
+        """UUID only. A Mongo 24-hex ObjectId is invalid."""
+        if id_str is None:
+            return None
         try:
-            return ObjectId(id_str)
-        except Exception:
+            return UUID(str(id_str))
+        except (ValueError, TypeError, AttributeError):
             return None
-    
+
     @staticmethod
-    def serialize_doc(doc: Optional[Dict]) -> Optional[Dict]:
-        """
-        Serialize MongoDB document (convert ObjectId to string)
-        
-        Args:
-            doc: MongoDB document
-            
-        Returns:
-            Serialized document hoặc None
-        """
-        if not doc:
+    def serialize_value(value: Any) -> Any:
+        if isinstance(value, UUID):
+            return str(value)
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {k: BaseRepository.serialize_value(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [BaseRepository.serialize_value(v) for v in value]
+        return value
+
+    @staticmethod
+    def serialize_row(row) -> Optional[dict]:
+        if row is None:
             return None
-        if "_id" in doc:
-            doc["id"] = str(doc["_id"])
-            del doc["_id"]
-        return doc
-    
+        if isinstance(row, dict):
+            data = dict(row)
+        elif hasattr(row, "__table__"):
+            data = {c.name: getattr(row, c.name) for c in row.__table__.columns}
+        else:
+            data = {k: v for k, v in vars(row).items() if not k.startswith("_")}
+        if "_id" in data and "id" not in data:
+            data["id"] = data.pop("_id")
+        return {k: BaseRepository.serialize_value(v) for k, v in data.items()}
+
     @staticmethod
-    def serialize_docs(docs: List[Dict]) -> List[Dict]:
-        """
-        Serialize list of MongoDB documents
-        
-        Args:
-            docs: List of documents
-            
-        Returns:
-            List of serialized documents
-        """
-        return [BaseRepository.serialize_doc(doc) for doc in docs if doc]
-    
-    async def insert_one(self, document: Dict) -> str:
-        """
-        Insert một document
-        
-        Args:
-            document: Document data
-            
-        Returns:
-            ID của document mới tạo
-        """
-        result = await self.collection.insert_one(document)
-        return str(result.inserted_id)
-    
-    async def find_one(self, query: Dict) -> Optional[Dict]:
-        """
-        Tìm một document
-        
-        Args:
-            query: Query filter
-            
-        Returns:
-            Document hoặc None
-        """
-        return await self.collection.find_one(query)
-    
-    async def find_many(self, query: Dict, limit: int = 100) -> List[Dict]:
-        """
-        Tìm nhiều documents
-        
-        Args:
-            query: Query filter
-            limit: Giới hạn số lượng
-            
-        Returns:
-            List of documents
-        """
-        cursor = self.collection.find(query).limit(limit)
-        return await cursor.to_list(length=limit)
-    
-    async def update_one(self, query: Dict, update_data: Dict) -> bool:
-        """
-        Update một document
-        
-        Args:
-            query: Query filter
-            update_data: Data cần update
-            
-        Returns:
-            True nếu update thành công
-        """
-        result = await self.collection.update_one(query, {"$set": update_data})
-        return result.modified_count > 0
-    
-    async def delete_one(self, query: Dict) -> bool:
-        """
-        Xóa một document
-        
-        Args:
-            query: Query filter
-            
-        Returns:
-            True nếu xóa thành công
-        """
-        result = await self.collection.delete_one(query)
-        return result.deleted_count > 0
-    
-    async def count(self, query: Dict) -> int:
-        """
-        Đếm số documents
-        
-        Args:
-            query: Query filter
-            
-        Returns:
-            Số lượng documents
-        """
-        return await self.collection.count_documents(query)
+    def serialize_rows(rows) -> list:
+        return [BaseRepository.serialize_row(r) for r in rows if r is not None]

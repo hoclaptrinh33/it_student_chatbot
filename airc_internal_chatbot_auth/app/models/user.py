@@ -114,6 +114,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=6)
     full_name: str
     role: UserRole = UserRole.STUDENT
+    student_code: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -130,6 +131,8 @@ class UserInDB(UserBase):
     hashed_password: str
     created_at: datetime
     updated_at: Optional[datetime] = None
+    student_code: Optional[str] = None
+    department: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -139,6 +142,8 @@ class UserResponse(UserBase):
     """User response schema (không trả password)"""
     id: str
     created_at: datetime
+    student_code: Optional[str] = None
+    department: Optional[str] = None
     
     class Config:
         from_attributes = True

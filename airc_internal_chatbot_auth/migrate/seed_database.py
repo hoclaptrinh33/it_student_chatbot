@@ -1,4 +1,7 @@
 """
+DEPRECATED: Mongo seeder. Schema + seed users now live in init_db.sql (Postgres).
+Do not import this module from the Auth app runtime.
+
 Unified Database Seed Script - Khởi tạo toàn bộ database cho Auth Service
 
 Script này tạo:

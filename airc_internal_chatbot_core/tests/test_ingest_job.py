@@ -7,3 +7,6 @@ def test_ingest_job_entrypoint_exists():
     assert "def process_dataset_file_job" in source
     assert "ProcessingService" in source
     assert "process_dataset_file" in source
+    assert "SessionLocal" in source
+    assert "connect_to_mongo" not in source
+    assert "mongodb" not in source

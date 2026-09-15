@@ -2,8 +2,8 @@
 API Dependencies - Dependency injection cho FastAPI
 """
 from fastapi import Depends, HTTPException, status, Header
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.core.database import get_database
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_session
 from app.repositories import (
     DatasetRepository,
     FileRepository,
@@ -134,35 +134,30 @@ async def get_bearer_token(authorization: Optional[str] = Header(None, alias="Au
 
 
 # Repository dependencies
-async def get_dataset_repo(db: AsyncIOMotorDatabase = Depends(get_database)) -> DatasetRepository:
-    """Inject DatasetRepository"""
-    return DatasetRepository(db)
+async def get_dataset_repo(session: AsyncSession = Depends(get_session)) -> DatasetRepository:
+    return DatasetRepository(session)
 
 
-async def get_file_repo(db: AsyncIOMotorDatabase = Depends(get_database)) -> FileRepository:
-    """Inject FileRepository"""
-    return FileRepository(db)
+async def get_file_repo(session: AsyncSession = Depends(get_session)) -> FileRepository:
+    return FileRepository(session)
 
 
-async def get_dataset_file_repo(db: AsyncIOMotorDatabase = Depends(get_database)) -> DatasetFileRepository:
-    """Inject DatasetFileRepository"""
-    return DatasetFileRepository(db)
+async def get_dataset_file_repo(session: AsyncSession = Depends(get_session)) -> DatasetFileRepository:
+    return DatasetFileRepository(session)
 
 
-async def get_chunk_repo(db: AsyncIOMotorDatabase = Depends(get_database)) -> ChunkRepository:
-    """Inject ChunkRepository"""
-    return ChunkRepository(db)
+async def get_chunk_repo(session: AsyncSession = Depends(get_session)) -> ChunkRepository:
+    return ChunkRepository(session)
 
 
-async def get_session_repo(db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Inject SessionRepository"""
+async def get_session_repo(session: AsyncSession = Depends(get_session)):
     from app.repositories.session_repository import SessionRepository
-    return SessionRepository(db)
+    return SessionRepository(session)
 
 
-async def get_chatbot_repo(db: AsyncIOMotorDatabase = Depends(get_database)):
+async def get_chatbot_repo(session: AsyncSession = Depends(get_session)):
     from app.repositories.chatbot_repository import ChatbotRepository
-    return ChatbotRepository(db)
+    return ChatbotRepository(session)
 
 
 # Service dependencies
@@ -172,7 +167,6 @@ async def get_dataset_service(
     file_repo: FileRepository = Depends(get_file_repo),
     chunk_repo: ChunkRepository = Depends(get_chunk_repo)
 ) -> DatasetService:
-    """Inject DatasetService with all dependencies"""
     return DatasetService(dataset_repo, dataset_file_repo, file_repo, chunk_repo)
 
 
@@ -184,7 +178,6 @@ async def get_chat_service(
     chatbot_repo = Depends(get_chatbot_repo),
     file_repo: FileRepository = Depends(get_file_repo),
 ) -> ChatService:
-    """Inject ChatService with all dependencies"""
     return ChatService(
         dataset_repo, dataset_file_repo, chunk_repo,
         session_repo, chatbot_repo, file_repo,
@@ -196,7 +189,6 @@ async def get_processing_service(
     file_repo: FileRepository = Depends(get_file_repo),
     chunk_repo: ChunkRepository = Depends(get_chunk_repo)
 ):
-    """Inject ProcessingService"""
     from app.services.processing_service import ProcessingService
     return ProcessingService(dataset_file_repo, file_repo, chunk_repo)
 
