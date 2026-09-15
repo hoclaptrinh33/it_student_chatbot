@@ -497,7 +497,9 @@ async def set_user_roles(
     updated_roles = await repo.get_user_roles(user_id)
     primary = _primary_role_code(updated_roles)
     try:
-        await auth_service.update_user_admin(user_id, {"role": primary})
+        await auth_service.update_user_admin(
+            user_id, {"role": primary}, replace_roles=False
+        )
     except Exception as exc:
         logger.warning("Failed to sync users.role for %s: %s", user_id, exc)
 

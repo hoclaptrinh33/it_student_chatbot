@@ -123,13 +123,17 @@ class AuthService:
         logger.info("Assigned role %s to new user %s", user_data.role.value, user["email"])
         return user
 
-    async def update_user_admin(self, user_id: str, update_data: dict) -> bool:
+    async def update_user_admin(
+        self, user_id: str, update_data: dict, replace_roles: bool = True
+    ) -> bool:
         if "password" in update_data and update_data["password"]:
             update_data["hashed_password"] = self.hash_password(update_data["password"])
             del update_data["password"]
         if "role" in update_data and hasattr(update_data["role"], "value"):
             update_data["role"] = update_data["role"].value
-        return await self.user_repo.update_user(user_id, update_data)
+        return await self.user_repo.update_user(
+            user_id, update_data, replace_roles=replace_roles
+        )
 
     async def delete_user_admin(self, user_id: str) -> bool:
         return await self.user_repo.delete_user(user_id)
