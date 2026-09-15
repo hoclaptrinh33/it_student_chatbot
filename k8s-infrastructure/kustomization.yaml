@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: airc-chatbot
+
+resources:
+  - namespace.yaml
+  - configmap/shared-config.yaml
+  - mongodb/deployment.yaml
+  - redis/deployment.yaml
+  - qdrant/deployment.yaml
+
+# Secrets are generated locally from secrets/shared-secrets.env
+# (copy secrets/shared-secrets.env.example — never commit the real file).
+secretGenerator:
+  - name: shared-secrets
+    envs:
+      - secrets/shared-secrets.env.example
+    options:
+      disableNameSuffixHash: true

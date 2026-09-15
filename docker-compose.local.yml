@@ -1,0 +1,220 @@
+# Docker Compose cho LOCAL development (không GPU)
+# Container / network dùng tiền tố it_ để tránh xung đột với dự án AIRC cũ.
+
+services:
+  # 1. PostgreSQL 15 — RDBMS chính (thay MongoDB)
+  postgres:
+    image: postgres:15-alpine
+    container_name: it_postgres
+    restart: "no"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: it_admin
+      POSTGRES_PASSWORD: it_chatbot_2026
+      POSTGRES_DB: it_student_chatbot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/01_init_db.sql:ro
+    networks:
+      - it_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U it_admin -d it_student_chatbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # 2. Redis
+  redis:
+    image: redis:7-alpine
+    container_name: it_redis
+    restart: "no"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - it_network
+
+  # 3. Qdrant
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: it_qdrant
+    restart: "no"
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - it_network
+
+  # 4. Auth Service
+  auth_service:
+    image: registry.neovort.shop/airc-auth-service:latest
+    build:
+      context: ./airc_internal_chatbot_auth
+      dockerfile: Dockerfile
+    container_name: it_auth
+    restart: "no"
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://it_admin:it_chatbot_2026@postgres:5432/it_student_chatbot
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=it_admin
+      - POSTGRES_PASSWORD=it_chatbot_2026
+      - POSTGRES_DB=it_student_chatbot
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=AIRC_SUPER_SECRET_KEY_2024
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=1440
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - it_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health', timeout=5).status==200 else 1)\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 5. Core Service
+  core_service:
+    image: registry.neovort.shop/airc-core-service:latest
+    build:
+      context: ./airc_internal_chatbot_core
+      dockerfile: Dockerfile
+    container_name: it_core
+    restart: "no"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./airc_internal_chatbot_core/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://it_admin:it_chatbot_2026@postgres:5432/it_student_chatbot
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=it_admin
+      - POSTGRES_PASSWORD=it_chatbot_2026
+      - POSTGRES_DB=it_student_chatbot
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - AUTH_SERVICE_URL=http://auth_service:8001
+      - JWT_SECRET_KEY=AIRC_SUPER_SECRET_KEY_2024
+      - JWT_ALGORITHM=HS256
+      - DEBUG=True
+      - CUDA_VISIBLE_DEVICES=-1
+      - HF_HOME=/app/models_cache
+      - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
+    volumes:
+      - core_uploads:/app/uploads
+      - core_faiss:/app/faiss_indexes
+      - docling_models_cache:/app/models_cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      auth_service:
+        condition: service_started
+    networks:
+      - it_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status==200 else 1)\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 6. Worker Service — dùng chung image với Core
+  worker_service:
+    image: registry.neovort.shop/airc-core-service:latest
+    build:
+      context: ./airc_internal_chatbot_core
+      dockerfile: Dockerfile
+    container_name: it_worker
+    restart: "no"
+    command: python worker.py
+    env_file:
+      - ./airc_internal_chatbot_core/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://it_admin:it_chatbot_2026@postgres:5432/it_student_chatbot
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=it_admin
+      - POSTGRES_PASSWORD=it_chatbot_2026
+      - POSTGRES_DB=it_student_chatbot
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - CUDA_VISIBLE_DEVICES=-1
+      - HF_HOME=/app/models_cache
+      - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
+    volumes:
+      - core_uploads:/app/uploads
+      - core_faiss:/app/faiss_indexes
+      - docling_models_cache:/app/models_cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      core_service:
+        condition: service_started
+    networks:
+      - it_network
+
+  # 7. UI Service
+  ui_service:
+    image: registry.neovort.shop/airc-ui-service:latest
+    build:
+      context: ./airc_internal_chatbot_ui
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_AUTH_API: http://localhost:8001/api/auth
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
+    container_name: it_ui
+    restart: "no"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - auth_service
+      - core_service
+    networks:
+      - it_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  it_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  core_uploads:
+  core_faiss:
+  docling_models_cache:
