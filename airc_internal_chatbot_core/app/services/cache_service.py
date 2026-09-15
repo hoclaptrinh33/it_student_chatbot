@@ -8,6 +8,8 @@ import numpy as np
 from datetime import datetime, timedelta
 from app.services.cache_policy import is_cacheable_answer
 
+HYBRID_CACHE_TTL_SECONDS = 15 * 60
+
 logger = logging.getLogger(__name__)
 
 
@@ -115,16 +117,18 @@ class SemanticCacheService:
         question: str,
         question_embedding: np.ndarray,
         answer: str,
-        suffix: str = ""
+        suffix: str = "",
+        ttl_seconds: Optional[int] = None,
     ):
         """
         Lưu câu hỏi-trả lời vào cache
-        
+
         Args:
             question: Câu hỏi
             question_embedding: Embedding vector
             answer: Câu trả lời cần cache
-            suffix: Optional suffix to isolate cache (e.g., "_bot_123")
+            suffix: Optional suffix to isolate cache (e.g., "_bot_123_user_abc")
+            ttl_seconds: Per-entry TTL. Defaults to the instance TTL.
         """
         if not is_cacheable_answer(answer):
             logger.info(
@@ -139,14 +143,16 @@ class SemanticCacheService:
             # Remove oldest entry
             self.cache.pop(0)
             logger.debug(f"[CACHE] Evicted oldest entry, size={len(self.cache)}")
-        
-        # Add new entry
+
+        now = datetime.utcnow()
+        ttl = self.ttl_seconds if ttl_seconds is None else ttl_seconds
         entry = {
             'question': question,
             'embedding': question_embedding.tolist(),
             'answer': answer,
-            'timestamp': datetime.utcnow(),
-            'suffix': suffix  # NEW: Chatbot isolation
+            'timestamp': now,
+            'expires_at': now + timedelta(seconds=ttl),
+            'suffix': suffix,
         }
         
         self.cache.append(entry)
@@ -157,15 +163,17 @@ class SemanticCacheService:
         )
     
     def _clean_expired(self):
-        """Xóa các entries đã hết hạn"""
+        """Xóa các entries đã hết hạn (per-entry expires_at, else instance TTL)."""
         now = datetime.utcnow()
-        cutoff = now - timedelta(seconds=self.ttl_seconds)
-        
         original_size = len(self.cache)
-        self.cache = [
-            entry for entry in self.cache
-            if entry['timestamp'] > cutoff
-        ]
+        kept = []
+        for entry in self.cache:
+            expires_at = entry.get("expires_at")
+            if expires_at is None:
+                expires_at = entry["timestamp"] + timedelta(seconds=self.ttl_seconds)
+            if expires_at > now:
+                kept.append(entry)
+        self.cache = kept
         
         removed = original_size - len(self.cache)
         if removed > 0:

@@ -3,7 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+import numpy as np
+
 from app.models.academic_schemas import RecordUpsert
+from app.services.cache_service import semantic_cache_service
 from app.services.student_record_service import StudentRecordService
 
 SV001 = "cccccccc-cccc-cccc-cccc-cccccccccccc"
@@ -45,6 +48,34 @@ async def test_upsert_increments_attempt_when_failed_reregistered():
     )
     kwargs = record_repo.upsert.await_args.kwargs
     assert kwargs["attempt_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_grade_upsert_clears_semantic_cache():
+    semantic_cache_service.clear()
+    vec = np.ones(8, dtype=float)
+    semantic_cache_service.set(
+        "hybrid question",
+        vec,
+        "cached answer for SV001",
+        suffix="_bot_x_user_cccccccc",
+    )
+    assert semantic_cache_service.get("hybrid question", vec, suffix="_bot_x_user_cccccccc")
+
+    record_repo = AsyncMock()
+    record_repo.get_user = AsyncMock(return_value={"id": SV001, "student_code": "SV001"})
+    record_repo.get_by_user_and_course = AsyncMock(return_value=None)
+    record_repo.upsert = AsyncMock(
+        return_value={"id": "r1", "user_id": SV001, "course_id": COURSE_ID, "status": "PASSED"}
+    )
+    course_repo = AsyncMock()
+    course_repo.get_by_code = AsyncMock(return_value={"id": COURSE_ID, "course_code": "INT1203"})
+    service = StudentRecordService(record_repo, course_repo)
+
+    await service.upsert(
+        RecordUpsert(user_id=SV001, course_code="INT1203", status="PASSED", grade=7.0, semester_taken="2025-1")
+    )
+    assert semantic_cache_service.get("hybrid question", vec, suffix="_bot_x_user_cccccccc") is None
 
 
 @pytest.mark.asyncio

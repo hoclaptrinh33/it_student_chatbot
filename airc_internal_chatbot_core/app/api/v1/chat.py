@@ -71,6 +71,8 @@ async def ask_question(
             errors=result.get("errors", []),
             debug=result.get("debug"),
             message_id=result.get("message_id"),
+            intent=result.get("intent"),
+            empty_transcript=bool(result.get("empty_transcript")),
         )
 
     except PermissionError as pe:
@@ -176,9 +178,10 @@ async def get_chat_suggestions(
 ):
     recent = await session_repo.get_recent_user_questions(current_user.user_id)
     fallback = [
-        "Quy chế đào tạo quy định những gì?",
-        "Sinh viên cần làm thủ tục gì khi nghỉ học?",
-        "Tóm tắt các điều khoản quan trọng trong tài liệu.",
+        "Học kì này em đủ điều kiện môn nào?",
+        "Em trượt môn nào, cần học lại ra sao?",
+        "Theo hướng Web thì môn tiếp theo là gì?",
+        "Slide / đề cương môn INT2104 ở đâu?",
     ]
     seen = {q.lower() for q in recent}
     suggestions = list(recent)

@@ -1,7 +1,12 @@
 """Transcript, eligible courses, grade upsert and CSV import."""
 import csv
 import io
+import logging
 from typing import List, Optional
+
+from app.services.cache_service import semantic_cache_service
+
+logger = logging.getLogger(__name__)
 
 from app.models.academic_schemas import RecordUpsert
 from app.repositories.course_repository import CourseRepository
@@ -87,7 +92,7 @@ class StudentRecordService:
         attempt = self._next_attempt(
             existing, data.status, data.semester_taken, data.attempt_count
         )
-        return await self.record_repo.upsert(
+        result = await self.record_repo.upsert(
             user_id=data.user_id,
             course_id=course["id"],
             status=data.status,
@@ -95,9 +100,19 @@ class StudentRecordService:
             semester_taken=data.semester_taken,
             attempt_count=attempt,
         )
+        self._invalidate_semantic_cache()
+        return result
 
     async def delete_record(self, record_id: str) -> bool:
-        return await self.record_repo.delete(record_id)
+        deleted = await self.record_repo.delete(record_id)
+        if deleted:
+            self._invalidate_semantic_cache()
+        return deleted
+
+    @staticmethod
+    def _invalidate_semantic_cache() -> None:
+        semantic_cache_service.clear()
+        logger.info("[GRADES] cache_invalidated_reason=grade_write")
 
     def _parse_csv(self, raw: bytes) -> List[dict]:
         text = raw.decode("utf-8-sig")
@@ -189,4 +204,5 @@ class StudentRecordService:
                         errors.append({"row": row_number, "reason": str(exc)})
                         if strict:
                             raise
+        self._invalidate_semantic_cache()
         return {"imported": imported, "errors": errors, "total": len(parsed)}

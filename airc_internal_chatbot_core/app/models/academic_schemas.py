@@ -242,7 +242,7 @@ class MaterialResponse(BaseModel):
 
 
 class AcademicFactsDebug(BaseModel):
-    """Thin debug payload. Full AcademicFactsService is PR3."""
+    """Thin debug payload for GET /academic/me/facts."""
 
     student_id: str
     student_code: Optional[str] = None

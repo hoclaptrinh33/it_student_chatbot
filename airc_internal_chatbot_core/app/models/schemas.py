@@ -135,6 +135,8 @@ class ChatResponse(BaseModel):
     errors: List[Dict[str, Any]] = Field(default_factory=list)
     debug: Optional[Dict[str, Any]] = None  # RAG performance metrics
     message_id: Optional[str] = None
+    intent: Optional[str] = None
+    empty_transcript: bool = False
 
 
 class ChatFeedbackRequest(BaseModel):

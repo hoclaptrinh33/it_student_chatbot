@@ -36,6 +36,10 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | Upsert điểm + CSV import (batch 100, dòng lỗi không abort trừ `strict=true`) | Đã làm |
 | Sinh viên ghi điểm / xem bảng điểm người khác → 403; xóa môn có `student_records` → 409 | Đã làm |
 | Quyền học vụ `courses:*` / `records:*` / `materials:*` đồng bộ SQL + Auth + Core | Đã làm |
+| Hybrid chat: IntentClassifier rules-first (`COURSE_ADVICE` / `MATERIAL_QA` / `HYBRID`) | Đã làm |
+| Inject `[AcademicFacts]` từ JWT `user_id` (Postgres), không tin utterance sinh viên | Đã làm |
+| Persona cố vấn Khoa CNTT + block cấm bịa mã môn (admin `system_prompt` không gỡ được) | Đã làm |
+| Cache P0: COURSE_ADVICE skip; HYBRID suffix có `user_id` TTL 15 phút; invalidate khi ghi điểm | Đã làm |
 
 ### Bug
 

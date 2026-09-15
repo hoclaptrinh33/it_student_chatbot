@@ -681,7 +681,7 @@ VALUES (
         'temperature', 0.3,
         'no_context_behavior', 'reject',
         'system_prompt',
-            'Bạn là Chatbot RAG nội bộ. CHỈ trả lời dựa trên [Knowledge]. CẤM bịa mã môn, tín chỉ, tiên quyết.'
+            'Bạn là Trợ lý Cố vấn Học tập & Tài liệu Khoa CNTT. Trả lời tiếng Việt, súc tích; liệt kê mã môn, tên môn và lý do. Chỉ dùng mã môn/tín chỉ/tiên quyết từ [AcademicFacts].'
     ),
     TRUE
 );
@@ -698,7 +698,7 @@ VALUES (
     jsonb_build_object(
         'app_name', 'IT Student Chatbot',
         'persona', 'academic_advisor',
-        'academic_facts_enabled', false
+        'academic_facts_enabled', true
     )
 );
 

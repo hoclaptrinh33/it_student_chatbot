@@ -108,7 +108,8 @@ class VectorService:
         dataset_id: str,
         query_vector: np.ndarray,
         top_k: int = 5,
-        allowed_file_ids: Optional[List[str]] = None
+        allowed_file_ids: Optional[List[str]] = None,
+        course_id: Optional[str] = None,
     ) -> Tuple[List[float], List[Dict[str, Any]]]:
         """
         Tìm kiếm các vector tương đồng gần nhất (Similarity Search)
@@ -136,50 +137,68 @@ class VectorService:
              vector_list = vector_list[0]
         
         # Build Filter
-        query_filter = None
+        must_conditions = []
         if allowed_file_ids is not None:
             # Nếu allowed_file_ids rỗng -> Không tìm thấy gì (logic chặt chẽ)
             if not allowed_file_ids:
                 return [], []
-                
-            query_filter = rest.Filter(
-                must=[
-                    rest.FieldCondition(
-                        key="dataset_file_id",
-                        match=rest.MatchAny(any=allowed_file_ids)
-                    )
-                ]
+            must_conditions.append(
+                rest.FieldCondition(
+                    key="dataset_file_id",
+                    match=rest.MatchAny(any=allowed_file_ids)
+                )
             )
+        if course_id:
+            must_conditions.append(
+                rest.FieldCondition(
+                    key="course_id",
+                    match=rest.MatchValue(value=course_id),
+                )
+            )
+        query_filter = rest.Filter(must=must_conditions) if must_conditions else None
 
-        try:
-            # Use query_points (Qdrant 1.16+ API)
-            # Docs: https://python-client.qdrant.tech/
-            from qdrant_client.models import QueryRequest, VectorInput
-            
-            search_result = self.client.query_points(
-                collection_name=collection_name,
-                query=vector_list,
-                query_filter=query_filter,
-                limit=top_k,
-                with_payload=True
-            ).points
-            
-        except AttributeError as e:
-            logger.error(f"[VECTOR] API Error: {e}. Trying legacy search method...")
-            # Fallback to legacy search() if query_points() not available
+        def _run_search(active_filter):
             try:
-                search_result = self.client.search(
+                return self.client.query_points(
+                    collection_name=collection_name,
+                    query=vector_list,
+                    query_filter=active_filter,
+                    limit=top_k,
+                    with_payload=True
+                ).points
+            except AttributeError as e:
+                logger.error(f"[VECTOR] API Error: {e}. Trying legacy search method...")
+                return self.client.search(
                     collection_name=collection_name,
                     query_vector=vector_list,
-                    query_filter=query_filter,
+                    query_filter=active_filter,
                     limit=top_k
                 )
-            except Exception as fallback_err:
-                logger.error(f"[VECTOR] Fallback also failed: {fallback_err}")
-                return [], []
+
+        try:
+            search_result = _run_search(query_filter)
         except Exception as e:
-            logger.error(f"[VECTOR] Search Failed: {e}")
-            return [], []
+            if course_id:
+                logger.info("[VECTOR] course_id filter failed (%s) — search as today", e)
+                try:
+                    fallback_filter = rest.Filter(must=must_conditions[:-1]) if must_conditions[:-1] else None
+                    search_result = _run_search(fallback_filter)
+                except Exception as fallback_err:
+                    logger.error(f"[VECTOR] Search Failed: {fallback_err}")
+                    return [], []
+            else:
+                logger.error(f"[VECTOR] Search Failed: {e}")
+                return [], []
+
+        # Payload index/course_id is PR4. Empty filtered hits → search as today.
+        if course_id and not search_result:
+            logger.info("[VECTOR] course_id filter empty — retry without course_id")
+            try:
+                fallback_filter = rest.Filter(must=must_conditions[:-1]) if must_conditions[:-1] else None
+                search_result = _run_search(fallback_filter)
+            except Exception as fallback_err:
+                logger.error(f"[VECTOR] Fallback without course_id failed: {fallback_err}")
+                return [], []
         
         # Tách kết quả thành 2 list riêng biệt
         scores = [hit.score for hit in search_result]

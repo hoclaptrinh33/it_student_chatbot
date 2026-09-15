@@ -20,9 +20,10 @@ from app.services.vector_service import vector_service
 from app.services.llm_service import llm_service
 from app.services.prompt_service import prompt_service
 from app.services.rerank_service import rerank_service
-from app.services.cache_service import semantic_cache_service
+from app.services.cache_service import HYBRID_CACHE_TTL_SECONDS, semantic_cache_service
 from app.services.cache_policy import is_cacheable_answer
 from app.services.retrieval_merge import apply_score_threshold, rrf_merge
+from app.services.intent_classifier import ChatIntent, IntentClassifier, intent_classifier
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,22 @@ logger = logging.getLogger(__name__)
 # Constants
 DEFAULT_TOP_K = 5
 MAX_DATASETS_PER_REQUEST = 8
+
+
+def build_cache_suffix(
+    intent: Optional[str],
+    chatbot_id: Optional[str],
+    user_id: Optional[str],
+    course_id: Optional[str] = None,
+) -> Optional[str]:
+    """Cache key suffix. None = skip get/set. HYBRID always includes user_id (P0)."""
+    bot = chatbot_id or "none"
+    if intent == ChatIntent.COURSE_ADVICE.value:
+        return None
+    if intent == ChatIntent.MATERIAL_QA.value:
+        return f"_bot_{bot}_course_{course_id or 'none'}"
+    uid = user_id or "anon"
+    return f"_bot_{bot}_user_{uid}"
 
 
 class ChatService:
@@ -46,6 +63,8 @@ class ChatService:
         session_repo: Any = None,
         chatbot_repo: Any = None,
         file_repo: Any = None,
+        academic_facts_service: Any = None,
+        intent_classifier_svc: Any = None,
     ):
         self.dataset_repo = dataset_repo
         self.dataset_file_repo = dataset_file_repo
@@ -53,6 +72,8 @@ class ChatService:
         self.session_repo = session_repo
         self.chatbot_repo = chatbot_repo
         self.file_repo = file_repo
+        self.academic_facts_service = academic_facts_service
+        self.intent_classifier = intent_classifier_svc or intent_classifier or IntentClassifier()
     
     async def ask_question(
         self,
@@ -125,37 +146,124 @@ class ChatService:
             settings.chat_fast_path,
         )
 
-        # 2. Check Semantic Cache (Tối ưu performance)
-        # CRITICAL: Cache key MUST include chatbot_id to prevent cross-bot pollution
-        start_embed = time.time()
-        q_embedding = self._try_embed_question(question)
-        debug_metrics["embedding_time_ms"] = round((time.time() - start_embed) * 1000, 2)
-        
-        cache_key_suffix = f"_bot_{chatbot_id}" if chatbot_id else ""
-        
-        if settings.semantic_cache_enabled and q_embedding is not None:
-            cached_resp = semantic_cache_service.get(question, q_embedding, suffix=cache_key_suffix)
-            if cached_resp:
-                logger.info(f"[CHAT] Cache HIT (chatbot={chatbot_id}) - Trả về kết quả đã lưu.")
-                # Save cached answer if session exists
-                assistant_message_id = None
-                if session_id and self.session_repo:
-                    saved = await self.session_repo.add_message(
-                        session_id,
-                        "assistant",
-                        cached_resp,
-                        extra={"latency_ms": 0, "cached": True},
-                    )
-                    assistant_message_id = saved.get("id")
-                if stream_callback:
-                    await stream_callback(cached_resp)
-                
-                debug_metrics["cache_hit"] = True
-                debug_metrics["total_time_ms"] = round((time.time() - start_total) * 1000, 2)
-                return self._format_response(
-                    question, cached_resp, [], [], cached=True,
-                    debug_metrics=debug_metrics, message_id=assistant_message_id,
+        facts_user_id = (user_context or {}).get("id")
+        classified = None
+        facts = None
+        use_academic = bool(getattr(settings, "academic_facts_enabled", True))
+        if use_academic:
+            classified = await self.intent_classifier.classify_async(question, history)
+            debug_metrics["intent"] = classified.intent.value
+            debug_metrics["career_track"] = classified.career_track
+            if self.academic_facts_service and facts_user_id:
+                facts = await self.academic_facts_service.build(
+                    facts_user_id, question, classified
                 )
+            elif self.academic_facts_service:
+                from app.services.academic_facts_service import AcademicFacts
+                facts = AcademicFacts.empty(
+                    "unknown",
+                    career_track=classified.career_track,
+                    mentioned_course_codes=list(classified.course_codes),
+                )
+            if facts is not None:
+                debug_metrics["current_semester"] = facts.current_semester
+                debug_metrics["empty_transcript"] = facts.empty_transcript
+            logger.info(
+                "[CHAT] intent=%s user=%s empty_transcript=%s semester=%s track=%s",
+                classified.intent.value,
+                facts_user_id,
+                bool(facts.empty_transcript) if facts else None,
+                facts.current_semester if facts else None,
+                classified.career_track,
+            )
+
+        filter_course_id = None
+        if classified and len(classified.course_codes) == 1:
+            filter_course_id = await self._resolve_course_id(classified.course_codes[0])
+
+        skip_rag = bool(
+            classified is not None
+            and classified.intent == ChatIntent.COURSE_ADVICE
+            and facts is not None
+        )
+        intent_value = classified.intent.value if classified else None
+        cache_key_suffix = build_cache_suffix(
+            intent_value, chatbot_id, facts_user_id, filter_course_id
+        )
+        if not use_academic:
+            # P0: even the legacy path must not share answers across users.
+            cache_key_suffix = build_cache_suffix(
+                ChatIntent.HYBRID.value, chatbot_id, facts_user_id
+            )
+        skip_cache = cache_key_suffix is None
+        cache_ttl = (
+            HYBRID_CACHE_TTL_SECONDS
+            if intent_value == ChatIntent.HYBRID.value
+            else None
+        )
+        debug_metrics["cache_suffix"] = cache_key_suffix
+
+        q_embedding = None
+        if not skip_rag:
+            start_embed = time.time()
+            q_embedding = self._try_embed_question(question)
+            debug_metrics["embedding_time_ms"] = round((time.time() - start_embed) * 1000, 2)
+
+        if (
+            not skip_cache
+            and settings.semantic_cache_enabled
+            and q_embedding is not None
+        ):
+            if (
+                facts is not None
+                and intent_value == ChatIntent.HYBRID.value
+                and "user_" not in (cache_key_suffix or "")
+            ):
+                logger.error(
+                    "[CACHE] cache_cross_user_blocked suffix=%s", cache_key_suffix
+                )
+            else:
+                cached_resp = semantic_cache_service.get(
+                    question, q_embedding, suffix=cache_key_suffix
+                )
+                if cached_resp:
+                    if (
+                        facts is not None
+                        and intent_value == ChatIntent.HYBRID.value
+                        and "user_" not in (cache_key_suffix or "")
+                    ):
+                        logger.error(
+                            "[CACHE] HIT without user_ on HYBRID — treating as miss suffix=%s",
+                            cache_key_suffix,
+                        )
+                    else:
+                        logger.info(
+                            "[CHAT] Cache HIT (chatbot=%s suffix=%s) - Trả về kết quả đã lưu.",
+                            chatbot_id,
+                            cache_key_suffix,
+                        )
+                        assistant_message_id = None
+                        if session_id and self.session_repo:
+                            saved = await self.session_repo.add_message(
+                                session_id,
+                                "assistant",
+                                cached_resp,
+                                extra={"latency_ms": 0, "cached": True},
+                            )
+                            assistant_message_id = saved.get("id")
+                        if stream_callback:
+                            await stream_callback(cached_resp)
+
+                        debug_metrics["cache_hit"] = True
+                        debug_metrics["total_time_ms"] = round((time.time() - start_total) * 1000, 2)
+                        return self._format_response(
+                            question, cached_resp, [], [], cached=True,
+                            debug_metrics=debug_metrics, message_id=assistant_message_id,
+                            intent=intent_value,
+                            empty_transcript=bool(facts.empty_transcript) if facts else False,
+                        )
+        elif skip_cache:
+            logger.info("[CACHE] SKIP intent=COURSE_ADVICE")
 
         # 3. Retrieval Process (Tìm kiếm dữ liệu từ Datasets)
         # Determine RAG Config
@@ -170,6 +278,7 @@ class ChatService:
         rag_system_prompt = None
         rag_temperature = 0.7
         rag_max_tokens = 2048
+        chatbot = None
         
         # Default: fast bot (no extra LLM hops). Accuracy bots opt in via config.
         enable_query_reformulation = False
@@ -263,6 +372,7 @@ class ChatService:
         
         if (
             enable_query_reformulation
+            and not skip_rag
             and not settings.chat_fast_path
             and history
             and len(history) >= 3
@@ -299,8 +409,10 @@ class ChatService:
         
         # 3. Retrieval Process with timing
         start_retrieval = time.time()
-        
-        if dataset_ids:
+
+        if skip_rag:
+            logger.info("[CHAT] COURSE_ADVICE: skip retrieve/rerank")
+        elif dataset_ids:
             # Has dataset_ids to search
             for ds_id in dataset_ids:
                 res = await self._search_dataset(
@@ -309,6 +421,7 @@ class ChatService:
                     search_embedding,
                     top_k=rag_top_k,
                     search_mode=rag_search_mode,
+                    course_id=filter_course_id,
                 )
                 grouped_results.append(res)
                 if res.get("error"):
@@ -325,11 +438,13 @@ class ChatService:
                 await self._list_all_datasets_context(grouped_results)
 
         debug_metrics["retrieval_time_ms"] = round((time.time() - start_retrieval) * 1000, 2)
-        debug_metrics["datasets_searched"] = len(dataset_ids)
+        debug_metrics["datasets_searched"] = 0 if skip_rag else len(dataset_ids)
 
         # 4. Reranking Process (Sắp xếp lại kết quả) with timing
         start_rerank = time.time()
-        if settings.chat_fast_path:
+        if skip_rag:
+            debug_metrics["reranker_used"] = None
+        elif settings.chat_fast_path:
             logger.info("[CHAT] fast_path: skip rerank")
             debug_metrics["reranker_used"] = None
         elif rag_reranker and rag_reranker != "None":
@@ -389,7 +504,7 @@ class ChatService:
             no_context_behavior = cfg.get("no_context_behavior", "reject")
             no_context_custom_msg = cfg.get("no_context_message")
         
-        if total_chunks == 0:
+        if total_chunks == 0 and not skip_rag:
             logger.warning(f"[CHAT] No context found - Behavior: {no_context_behavior}")
             debug_metrics["no_context"] = True
             
@@ -432,6 +547,8 @@ class ChatService:
                     no_context=True,
                     debug_metrics=debug_metrics,
                     message_id=assistant_message_id,
+                    intent=intent_value,
+                    empty_transcript=bool(facts.empty_transcript) if facts else False,
                 )
 
         # 4.7 History Compression (Nén lịch sử hội thoại nếu vượt quá ngưỡng đệm tích lũy)
@@ -482,7 +599,8 @@ class ChatService:
             grouped_results=grouped_results, 
             history=history_for_prompt, 
             system_prompt=rag_system_prompt,
-            conversation_summary=conversation_summary
+            conversation_summary=conversation_summary,
+            academic_facts=facts.to_prompt_dict() if facts is not None else None,
         )
         if stream_callback:
             parts: List[str] = []
@@ -509,14 +627,21 @@ class ChatService:
             )
         debug_metrics["llm_time_ms"] = round((time.time() - start_llm) * 1000, 2)
 
-        # 6. Save Cache (with chatbot_id to isolate per-bot cache)
+        # 6. Save Cache (suffix includes user_id on HYBRID — P0)
         if (
-            settings.semantic_cache_enabled
+            not skip_cache
+            and settings.semantic_cache_enabled
             and q_embedding is not None
             and is_cacheable_answer(answer)
             and not errors
         ):
-            semantic_cache_service.set(question, q_embedding, answer, suffix=cache_key_suffix)
+            semantic_cache_service.set(
+                question,
+                q_embedding,
+                answer,
+                suffix=cache_key_suffix,
+                ttl_seconds=cache_ttl,
+            )
             
         # Finalize debug metrics before persist so latency is stored
         debug_metrics["total_time_ms"] = round((time.time() - start_total) * 1000, 2)
@@ -538,7 +663,24 @@ class ChatService:
         return self._format_response(
             question, answer, grouped_results, errors, cached=False,
             debug_metrics=debug_metrics, message_id=assistant_message_id,
+            intent=intent_value,
+            empty_transcript=bool(facts.empty_transcript) if facts else False,
         )
+
+    async def _resolve_course_id(self, course_code: str) -> Optional[str]:
+        if not course_code or not self.academic_facts_service:
+            return None
+        course_repo = getattr(self.academic_facts_service, "course_repo", None)
+        if course_repo is None:
+            return None
+        try:
+            course = await course_repo.get_by_code(course_code)
+        except Exception as exc:
+            logger.info("[CHAT] course_id lookup failed for %s: %s", course_code, exc)
+            return None
+        if not course:
+            return None
+        return str(course.get("id") or "") or None
 
     async def _search_dataset(
         self, 
@@ -547,6 +689,7 @@ class ChatService:
         q_vec: Optional[np.ndarray],
         top_k: int = DEFAULT_TOP_K,
         search_mode: str = "hybrid",
+        course_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Tìm kiếm chunks liên quan trong một dataset cụ thể."""
         result_template = {
@@ -627,6 +770,7 @@ class ChatService:
                         q_vec,
                         top_k=top_k,
                         allowed_file_ids=enabled_ids,
+                        course_id=course_id,
                     )
                     if scores:
                         for score, payload in zip(scores, payloads):
@@ -802,6 +946,8 @@ class ChatService:
         no_context: bool = False,
         debug_metrics: Optional[Dict[str, Any]] = None,
         message_id: Optional[str] = None,
+        intent: Optional[str] = None,
+        empty_transcript: bool = False,
     ) -> Dict[str, Any]:
         """Format JSON trả về cho Clients."""
         return {
@@ -813,4 +959,6 @@ class ChatService:
             "no_context": no_context,  # Flag cho frontend biết không có context RAG
             "debug": debug_metrics,  # Debug metrics for performance analysis
             "message_id": message_id,
+            "intent": intent,
+            "empty_transcript": empty_transcript,
         }

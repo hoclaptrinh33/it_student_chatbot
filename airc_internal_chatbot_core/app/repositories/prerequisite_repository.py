@@ -50,6 +50,24 @@ class PrerequisiteRepository(BaseRepository):
         )
         return [self.serialize_row(dict(row)) for row in result.mappings().all()]
 
+    async def list_closure_by_code(self, course_code: str) -> List[dict]:
+        if not course_code:
+            return []
+        result = await self.session.execute(
+            text(
+                """
+                SELECT course_id, course_code, course_name,
+                       prerequisite_course_id, prerequisite_code, prerequisite_name,
+                       relation_type, depth
+                FROM v_course_prerequisite_closure
+                WHERE course_code = :code
+                ORDER BY depth, prerequisite_code
+                """
+            ),
+            {"code": course_code.strip().upper()},
+        )
+        return [self.serialize_row(dict(row)) for row in result.mappings().all()]
+
     async def add_edge(
         self,
         course_id: str,
@@ -100,6 +118,8 @@ class PrerequisiteRepository(BaseRepository):
                        c.course_code,
                        c.course_name,
                        c.credits,
+                       c.career_track,
+                       'PREREQUISITE' AS relation_type,
                        ARRAY_AGG(pc.course_code ORDER BY pc.course_code)
                            FILTER (WHERE sr.status IS DISTINCT FROM 'PASSED')
                            AS missing_prereq_codes
@@ -113,7 +133,7 @@ class PrerequisiteRepository(BaseRepository):
                 LEFT JOIN student_records mine
                     ON mine.course_id = c.id AND mine.user_id = :uid
                 WHERE mine.status IS NULL OR mine.status = 'FAILED'
-                GROUP BY c.id, c.course_code, c.course_name, c.credits
+                GROUP BY c.id, c.course_code, c.course_name, c.credits, c.career_track
                 HAVING COUNT(*) FILTER (WHERE sr.status IS DISTINCT FROM 'PASSED') > 0
                 ORDER BY c.semester NULLS LAST, c.course_code
                 LIMIT :lim

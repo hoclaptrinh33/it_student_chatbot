@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     # Chat latency knobs (test/debug)
     semantic_cache_enabled: bool = True
     chat_fast_path: bool = False
+    academic_facts_enabled: bool = True
 
     # Live-mode Edge-TTS voice
     tts_voice: str = "vi-VN-HoaiMyNeural"

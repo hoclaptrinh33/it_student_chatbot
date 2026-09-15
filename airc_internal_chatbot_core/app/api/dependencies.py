@@ -191,21 +191,6 @@ async def get_dataset_service(
     return DatasetService(dataset_repo, dataset_file_repo, file_repo, chunk_repo)
 
 
-async def get_chat_service(
-    dataset_repo: DatasetRepository = Depends(get_dataset_repo),
-    dataset_file_repo: DatasetFileRepository = Depends(get_dataset_file_repo),
-    chunk_repo: ChunkRepository = Depends(get_chunk_repo),
-    session_repo = Depends(get_session_repo),
-    chatbot_repo = Depends(get_chatbot_repo),
-    file_repo: FileRepository = Depends(get_file_repo),
-):
-    from app.services.chat_service import ChatService
-    return ChatService(
-        dataset_repo, dataset_file_repo, chunk_repo,
-        session_repo, chatbot_repo, file_repo,
-    )
-
-
 async def get_processing_service(
     dataset_file_repo: DatasetFileRepository = Depends(get_dataset_file_repo),
     file_repo: FileRepository = Depends(get_file_repo),
@@ -236,6 +221,30 @@ async def get_prerequisite_repo(session: AsyncSession = Depends(get_session)):
 async def get_student_record_repo(session: AsyncSession = Depends(get_session)):
     from app.repositories.student_record_repository import StudentRecordRepository
     return StudentRecordRepository(session)
+
+
+async def get_chat_service(
+    dataset_repo: DatasetRepository = Depends(get_dataset_repo),
+    dataset_file_repo: DatasetFileRepository = Depends(get_dataset_file_repo),
+    chunk_repo: ChunkRepository = Depends(get_chunk_repo),
+    session_repo = Depends(get_session_repo),
+    chatbot_repo = Depends(get_chatbot_repo),
+    file_repo: FileRepository = Depends(get_file_repo),
+    record_repo=Depends(get_student_record_repo),
+    course_repo=Depends(get_course_repo),
+    prerequisite_repo=Depends(get_prerequisite_repo),
+):
+    from app.services.academic_facts_service import AcademicFactsService
+    from app.services.chat_service import ChatService
+    from app.services.intent_classifier import intent_classifier
+    return ChatService(
+        dataset_repo, dataset_file_repo, chunk_repo,
+        session_repo, chatbot_repo, file_repo,
+        academic_facts_service=AcademicFactsService(
+            record_repo, course_repo, prerequisite_repo
+        ),
+        intent_classifier_svc=intent_classifier,
+    )
 
 
 async def get_learning_material_repo(session: AsyncSession = Depends(get_session)):
