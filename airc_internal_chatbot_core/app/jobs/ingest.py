@@ -1,15 +1,27 @@
 import asyncio
 import logging
+from typing import Optional
 
 from app.core.database import SessionLocal
 from app.models.enums import DatasetFileStatus
-from app.repositories import DatasetFileRepository, FileRepository, ChunkRepository
+from app.repositories import (
+    ChunkRepository,
+    CourseRepository,
+    DatasetFileRepository,
+    FileRepository,
+    LearningMaterialRepository,
+)
 from app.services.processing_service import ProcessingService
 
 logger = logging.getLogger(__name__)
 
 
-async def _async_process(dataset_id: str, dataset_file_id: str):
+async def _async_process(
+    dataset_id: str,
+    dataset_file_id: str,
+    course_id: Optional[str] = None,
+    material_type: Optional[str] = None,
+):
     """One Postgres session per ingest job. Commit success and ERROR status; do not roll back the UI status row."""
     async with SessionLocal() as session:
         dataset_file_repo = DatasetFileRepository(session)
@@ -19,9 +31,16 @@ async def _async_process(dataset_id: str, dataset_file_id: str):
             dataset_file_repo=dataset_file_repo,
             file_repo=file_repo,
             chunk_repo=chunk_repo,
+            material_repo=LearningMaterialRepository(session),
+            course_repo=CourseRepository(session),
         )
         try:
-            await service.process_dataset_file(dataset_id, dataset_file_id)
+            await service.process_dataset_file(
+                dataset_id,
+                dataset_file_id,
+                course_id=course_id,
+                material_type=material_type,
+            )
             await session.commit()
         except Exception:
             logger.exception("Job Failed for dataset_file=%s", dataset_file_id)
@@ -37,8 +56,13 @@ async def _async_process(dataset_id: str, dataset_file_id: str):
             raise
 
 
-def process_dataset_file_job(dataset_id: str, dataset_file_id: str):
+def process_dataset_file_job(
+    dataset_id: str,
+    dataset_file_id: str,
+    course_id: Optional[str] = None,
+    material_type: Optional[str] = None,
+):
     """
     Sync entrypoint for RQ Worker
     """
-    asyncio.run(_async_process(dataset_id, dataset_file_id))
+    asyncio.run(_async_process(dataset_id, dataset_file_id, course_id, material_type))

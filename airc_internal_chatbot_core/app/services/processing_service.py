@@ -5,8 +5,9 @@ Service này xử lý luồng background để chuyển đổi các file tài li
 from app.repositories import DatasetFileRepository, FileRepository, ChunkRepository
 from app.services.vector_service import vector_service
 from app.services.embedding_service import embedding_service
+from app.services.ingest_metadata import build_qdrant_payload, resolve_ingest_metadata
 from app.models.enums import DatasetFileStatus
-from typing import List
+from typing import List, Optional
 import logging
 import io
 import pypdf
@@ -29,11 +30,15 @@ class ProcessingService:
         self,
         dataset_file_repo: DatasetFileRepository,
         file_repo: FileRepository,
-        chunk_repo: ChunkRepository
+        chunk_repo: ChunkRepository,
+        material_repo=None,
+        course_repo=None,
     ):
         self.dataset_file_repo = dataset_file_repo
         self.file_repo = file_repo
         self.chunk_repo = chunk_repo
+        self.material_repo = material_repo
+        self.course_repo = course_repo
         self._doc_converter = None
 
     def _create_doc_converter(self, do_ocr: bool = False):
@@ -71,7 +76,13 @@ class ProcessingService:
                 raise e
         return self._doc_converter
 
-    async def process_dataset_file(self, dataset_id: str, dataset_file_id: str):
+    async def process_dataset_file(
+        self,
+        dataset_id: str,
+        dataset_file_id: str,
+        course_id: Optional[str] = None,
+        material_type: Optional[str] = None,
+    ):
         """
         Quy trình xử lý file:
         1. Lấy thông tin file
@@ -99,6 +110,15 @@ class ProcessingService:
             file_doc = await self.file_repo.get_by_id(df["file_id"])
             if not file_doc:
                 raise ValueError(f"File {df['file_id']} không tồn tại")
+
+            course_meta = await resolve_ingest_metadata(
+                filename=file_doc.get("name") or "",
+                file_id=df.get("file_id"),
+                material_repo=self.material_repo,
+                course_repo=self.course_repo,
+                explicit_course_id=course_id,
+                explicit_material_type=material_type,
+            )
             
             # 3. Xác định đường dẫn File trên đĩa cứng
             try:
@@ -225,17 +245,20 @@ class ProcessingService:
             
             # Map chunk_ids với payloads tương ứng cho Qdrant
             payloads = [
-                {
-                    "chunk_id": str(embeddable_chunk_ids[i]),
-                    "dataset_file_id": dataset_file_id,
-                    "dataset_id": dataset_id,
-                    "is_child": not chunks_to_embed[i]["is_parent"],
-                    "parent_chunk_id": chunks_to_embed[i]["parent_chunk_id"],
-                    "chunk_role": chunks_to_embed[i].get("chunk_role", "standalone"),
-                    "domain": chunks_to_embed[i].get("domain", "general"),
-                    "language": chunks_to_embed[i].get("language", "vi"),
-                    "is_table": chunks_to_embed[i].get("is_table", False)
-                }
+                build_qdrant_payload(
+                    chunk_id=str(embeddable_chunk_ids[i]),
+                    dataset_file_id=dataset_file_id,
+                    dataset_id=dataset_id,
+                    is_child=not chunks_to_embed[i]["is_parent"],
+                    parent_chunk_id=chunks_to_embed[i]["parent_chunk_id"],
+                    chunk_role=chunks_to_embed[i].get("chunk_role", "standalone"),
+                    domain=chunks_to_embed[i].get("domain", "general"),
+                    language=chunks_to_embed[i].get("language", "vi"),
+                    is_table=chunks_to_embed[i].get("is_table", False),
+                    course_id=course_meta.course_id,
+                    course_code=course_meta.course_code,
+                    material_type=course_meta.material_type,
+                )
                 for i in range(len(chunks_to_embed))
             ]
             

@@ -1,14 +1,15 @@
 """
 File Controller - API endpoints cho file upload/management
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse as StreamFileResponse, StreamingResponse
 from app.models.schemas import FileUploadResponse, FileResponse
 from app.repositories import FileRepository
-from app.api.dependencies import get_file_repo, get_current_user
+from app.api.dependencies import get_file_repo, get_current_user, get_learning_material_service
 from app.models.auth import User
 from app.models.enums import FileStatus
-from typing import List
+from app.services.learning_material_service import LearningMaterialService
+from typing import List, Optional
 import logging
 import os
 import aiofiles
@@ -27,8 +28,11 @@ from app.models.auth import User
 @router.post("/upload", response_model=FileUploadResponse, status_code=201)
 async def upload_file(
     file: UploadFile = File(...),
+    course_id: Optional[str] = Form(default=None),
+    material_type: Optional[str] = Form(default=None),
     current_user: User = Depends(get_current_user),
-    file_repo: FileRepository = Depends(get_file_repo)
+    file_repo: FileRepository = Depends(get_file_repo),
+    material_service: LearningMaterialService = Depends(get_learning_material_service),
 ):
     """
     Upload file lên Local Storage và tạo File record
@@ -78,6 +82,24 @@ async def upload_file(
             path=file_path, # Store relative path or absolute path? Relative is better for portability.
             status=FileStatus.READY
         )
+
+        if course_id and material_type:
+            try:
+                from app.models.academic_schemas import MaterialCreate
+                await material_service.bind_material(
+                    MaterialCreate(
+                        course_id=course_id.strip(),
+                        file_id=file_doc["id"],
+                        material_type=material_type,
+                        title=safe_filename,
+                    )
+                )
+            except ValueError as bind_err:
+                logger.warning(
+                    "Bind learning_material on upload failed file_id=%s: %s",
+                    file_doc["id"],
+                    bind_err,
+                )
         
         return FileUploadResponse(
             id=file_doc["id"],

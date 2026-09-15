@@ -34,6 +34,18 @@ class LearningMaterialRepository(BaseRepository):
         row = await self.session.get(LearningMaterial, uid)
         return self.serialize_row(row)
 
+    async def get_by_file_id(self, file_id: str) -> Optional[dict]:
+        uid = self.parse_id(file_id)
+        if not uid:
+            return None
+        result = await self.session.execute(
+            select(LearningMaterial)
+            .where(LearningMaterial.file_id == uid)
+            .order_by(LearningMaterial.created_at.desc())
+            .limit(1)
+        )
+        return self.serialize_row(result.scalar_one_or_none())
+
     async def create_material(self, data: dict) -> dict:
         row = LearningMaterial(
             course_id=self.parse_id(data["course_id"]),

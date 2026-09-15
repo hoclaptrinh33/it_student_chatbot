@@ -40,6 +40,12 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 | Inject `[AcademicFacts]` từ JWT `user_id` (Postgres), không tin utterance sinh viên | Đã làm |
 | Persona cố vấn Khoa CNTT + block cấm bịa mã môn (admin `system_prompt` không gỡ được) | Đã làm |
 | Cache P0: COURSE_ADVICE skip; HYBRID suffix có `user_id` TTL 15 phút; invalidate khi ghi điểm | Đã làm |
+| Ingest: payload Qdrant thêm `course_id`, `course_code`, `material_type` | Đã làm |
+| Nguồn metadata ingest: form upload/add-files → `learning_materials` theo `file_id` → parse tên file (`INT2104_slides.pdf`) | Đã làm |
+| `VectorService.search` filter `course_id` + `create_payload_index` keyword khi ensure collection | Đã làm |
+| Bind `POST /academic/materials` ghi `file_id` + `course_id` + `material_type` (+ `dataset_id`) | Đã làm |
+| Form API `course_id`/`material_type` trên `POST /files/upload` và `POST /datasets/{id}/files` | Đã làm |
+| UI dataset upload chọn môn + loại tài liệu (PR5) | Chưa làm |
 
 ### Bug
 

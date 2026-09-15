@@ -1,10 +1,11 @@
 """
 Pydantic Schemas - DTOs cho request/response validation
 """
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 from app.models.enums import FileStatus, DatasetFileStatus
+from app.models.academic_schemas import MATERIAL_TYPES
 
 
 # ==================== Dataset Schemas ====================
@@ -66,8 +67,20 @@ class FileResponse(BaseModel):
 # ==================== Dataset File Schemas ====================
 
 class AddFilesToDatasetRequest(BaseModel):
-    """Request: Thêm files vào dataset"""
+    """Request: Thêm files vào dataset; optional course bind for ingest payload."""
     file_ids: List[str] = Field(..., min_length=1)
+    course_id: Optional[str] = None
+    material_type: Optional[str] = None
+
+    @field_validator("material_type")
+    @classmethod
+    def validate_material_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is None or not str(value).strip():
+            return None
+        kind = str(value).strip().upper()
+        if kind not in MATERIAL_TYPES:
+            raise ValueError(f"material_type must be one of {MATERIAL_TYPES}")
+        return kind
 
 
 class DatasetFileResponse(BaseModel):

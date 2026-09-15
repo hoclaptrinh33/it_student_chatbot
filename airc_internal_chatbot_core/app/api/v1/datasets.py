@@ -172,8 +172,14 @@ async def delete_dataset(
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from app.services import DatasetService
-from app.api.dependencies import get_dataset_service, get_current_user, get_processing_service
+from app.api.dependencies import (
+    get_dataset_service,
+    get_current_user,
+    get_processing_service,
+    get_learning_material_service,
+)
 from app.services.processing_service import ProcessingService
+from app.services.learning_material_service import LearningMaterialService
 
 # ... (existing imports)
 
@@ -184,7 +190,8 @@ async def add_files_to_dataset(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     dataset_service: DatasetService = Depends(get_dataset_service),
-    processing_service: ProcessingService = Depends(get_processing_service)
+    processing_service: ProcessingService = Depends(get_processing_service),
+    material_service: LearningMaterialService = Depends(get_learning_material_service),
 ):
     """
     Thêm files vào dataset
@@ -217,6 +224,25 @@ async def add_files_to_dataset(
             dataset_id, 
             payload.file_ids
         )
+
+        if payload.course_id and payload.material_type:
+            from app.models.academic_schemas import MaterialCreate
+            for df in result["added"]:
+                try:
+                    await material_service.bind_material(
+                        MaterialCreate(
+                            course_id=payload.course_id,
+                            file_id=str(df.get("file_id")),
+                            material_type=payload.material_type,
+                            dataset_id=dataset_id,
+                        )
+                    )
+                except ValueError as bind_err:
+                    logger.warning(
+                        "Bind learning_material failed file_id=%s: %s",
+                        df.get("file_id"),
+                        bind_err,
+                    )
         
         # Trigger background processing for added files
         from app.core.queues import ingest_queue
@@ -227,6 +253,8 @@ async def add_files_to_dataset(
                 process_dataset_file_job,
                 dataset_id,
                 str(df["id"]),
+                payload.course_id,
+                payload.material_type,
                 job_timeout='1h' # Long timeout for big files
             )
             

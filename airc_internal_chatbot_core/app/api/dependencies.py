@@ -192,12 +192,21 @@ async def get_dataset_service(
 
 
 async def get_processing_service(
+    session: AsyncSession = Depends(get_session),
     dataset_file_repo: DatasetFileRepository = Depends(get_dataset_file_repo),
     file_repo: FileRepository = Depends(get_file_repo),
     chunk_repo: ChunkRepository = Depends(get_chunk_repo)
 ):
+    from app.repositories.course_repository import CourseRepository
+    from app.repositories.learning_material_repository import LearningMaterialRepository
     from app.services.processing_service import ProcessingService
-    return ProcessingService(dataset_file_repo, file_repo, chunk_repo)
+    return ProcessingService(
+        dataset_file_repo,
+        file_repo,
+        chunk_repo,
+        material_repo=LearningMaterialRepository(session),
+        course_repo=CourseRepository(session),
+    )
 
 
 async def get_chatbot_service(

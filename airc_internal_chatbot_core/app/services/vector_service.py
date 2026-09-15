@@ -51,6 +51,18 @@ class VectorService:
                 collection_name=collection_name,
                 vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
             )
+        self._ensure_course_id_payload_index(collection_name)
+
+    def _ensure_course_id_payload_index(self, collection_name: str):
+        """Keyword index so MATERIAL_QA can filter by course_id."""
+        try:
+            self.client.create_payload_index(
+                collection_name=collection_name,
+                field_name="course_id",
+                field_schema=rest.PayloadSchemaType.KEYWORD,
+            )
+        except Exception as exc:
+            logger.debug("[VECTOR] course_id payload index on %s: %s", collection_name, exc)
 
     def add_vectors(
         self, 
