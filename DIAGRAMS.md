@@ -288,83 +288,103 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph ACTORS["CÁC TÁC NHÂN HỆ THỐNG (ACTORS)"]
+    %% ==========================================
+    %% CÁC TÁC NHÂN HỆ THỐNG (ACTORS - CHUẨN UML KHÔNG DÙNG ICON)
+    %% ==========================================
+    subgraph ACTORS [" "]
         direction LR
-        SV["🎓 Sinh viên (Student)"]
-        GV["👨‍🏫 Giảng viên / Cố vấn (Teacher)"]
-        AD["⚙️ Quản trị viên (Admin)"]
+        SV["Sinh viên (Student)"]
+        GV["Giảng viên / Cố vấn (Teacher)"]
+        AD["Quản trị viên (Admin)"]
     end
 
-    subgraph SYSTEM["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT (AIRC CHATBOT)"]
-        direction TB
+    %% ==========================================
+    %% RANH GIỚI HỆ THỐNG (SYSTEM BOUNDARY)
+    %% ==========================================
+    subgraph SYSTEM ["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT"]
+        direction LR
 
-        subgraph ROW1["PHÂN HỆ TRUY CẬP VÀ NGHIỆP VỤ SINH VIÊN"]
-            direction LR
-            subgraph G1["1. Xác thực & Hồ sơ"]
-                direction TB
-                UC1(["Đăng nhập / Đăng ký"])
-                UC2(["Quên & Đặt lại mật khẩu"])
-                UC3(["Xem & Cập nhật hồ sơ"])
-            end
-            subgraph G2["2. Trợ lý Cố vấn Học vụ Sinh viên"]
-                direction TB
-                UC4(["Hỏi đáp quy chế & Lộ trình đào tạo"])
-                UC5(["Tra cứu môn học đủ điều kiện"])
-                UC6(["Tra cứu điểm & Môn cần học lại"])
-                UC7(["Tìm kiếm & Tải tài liệu PDF"])
-                UC8(["Tương tác giọng nói Live Voice"])
-            end
+        subgraph COL1 [" "]
+            direction TB
+            UC1(["Đăng nhập hệ thống"])
+            UC2(["Quên và đặt lại mật khẩu"])
+            UC3(["Xem và cập nhật hồ sơ"])
+            UC4(["Hỏi đáp quy chế & lộ trình"])
+            UC5(["Tra cứu môn đủ điều kiện"])
+            UC6(["Tra cứu điểm & môn nợ"])
         end
 
-        subgraph ROW2["PHÂN HỆ GIẢNG VIÊN VÀ QUẢN TRỊ VIÊN"]
-            direction LR
-            subgraph G3["3. Nghiệp vụ Giảng viên / Cố vấn"]
-                direction TB
-                UC9(["Xem tiến độ học tập sinh viên"])
-                UC10(["Xem trực quan sơ đồ DAG tiên quyết"])
-                UC11(["Quản lý & Đóng góp tài liệu"])
-                UC12(["Hỏi đáp trợ lý chuyên môn AI"])
-            end
-            subgraph G4["4. Nghiệp vụ Quản trị Hệ thống (Admin)"]
-                direction TB
-                UC13(["Quản trị người dùng & Phân quyền RBAC"])
-                UC14(["Quản lý 23 môn học & Cây tiên quyết"])
-                UC15(["Nhập liệu & Cập nhật bảng điểm"])
-                UC16(["Quản trị kho tri thức Vector Qdrant"])
-                UC17(["Cấu hình tham số RAG Pipeline & LLM"])
-            end
+        subgraph COL2 [" "]
+            direction TB
+            UC7(["Tìm kiếm và tải tài liệu PDF"])
+            UC8(["Giao tiếp giọng nói Live Voice"])
+            UC9(["Xem tiến độ học tập lớp"])
+            UC10(["Xem trực quan sơ đồ DAG"])
+            UC11(["Quản lý & đóng góp tài liệu"])
+            UC12(["Hỏi đáp trợ lý chuyên môn AI"])
+        end
+
+        subgraph COL3 [" "]
+            direction TB
+            UC13(["Quản trị người dùng & RBAC"])
+            UC14(["Quản lý 23 môn học & cây tiên quyết"])
+            UC15(["Nhập và cập nhật bảng điểm"])
+            UC16(["Quản trị kho tri thức Qdrant"])
+            UC17(["Cấu hình tham số RAG Pipeline & LLM"])
         end
     end
 
+    %% Định hướng và cố định thứ tự cột đứng chuẩn UML
+    UC1 ~~~ UC2 ~~~ UC3 ~~~ UC4 ~~~ UC5 ~~~ UC6
+    UC7 ~~~ UC8 ~~~ UC9 ~~~ UC10 ~~~ UC11 ~~~ UC12
+    UC13 ~~~ UC14 ~~~ UC15 ~~~ UC16 ~~~ UC17
+    COL1 ~~~ COL2 ~~~ COL3
     ACTORS ~~~ SYSTEM
-    ROW1 ~~~ ROW2
 
-    %% Liên kết Sinh viên
-    SV --> UC1
-    SV --> UC2
-    SV --> UC3
-    SV --> UC4
-    SV --> UC5
-    SV --> UC6
-    SV --> UC7
-    SV --> UC8
+    %% Quan hệ include và extend chuẩn UML giữa các Use Case
+    UC4 -.->|"include"| UC1
+    UC5 -.->|"include"| UC1
+    UC6 -.->|"include"| UC1
+    UC4 -.->|"extend"| UC8
+    UC4 -.->|"include"| UC7
 
-    %% Liên kết Giảng viên
-    GV --> UC1
-    GV --> UC3
-    GV --> UC9
-    GV --> UC10
-    GV --> UC11
-    GV --> UC12
+    %% Kết nối Actor Sinh viên với các Use Case (Associations)
+    SV --- UC1
+    SV --- UC2
+    SV --- UC3
+    SV --- UC4
+    SV --- UC5
+    SV --- UC6
+    SV --- UC7
+    SV --- UC8
 
-    %% Liên kết Quản trị viên
-    AD --> UC1
-    AD --> UC3
-    AD --> UC13
-    AD --> UC14
-    AD --> UC15
-    AD --> UC16
-    AD --> UC17
+    %% Kết nối Actor Giảng viên với các Use Case (Associations)
+    GV --- UC1
+    GV --- UC3
+    GV --- UC9
+    GV --- UC10
+    GV --- UC11
+    GV --- UC12
+
+    %% Kết nối Actor Quản trị viên với các Use Case (Associations)
+    AD --- UC1
+    AD --- UC3
+    AD --- UC13
+    AD --- UC14
+    AD --- UC15
+    AD --- UC16
+    AD --- UC17
+
+    %% Định dạng trực quan chuẩn UML
+    style ACTORS fill:none,stroke:none;
+    style COL1 fill:none,stroke:none;
+    style COL2 fill:none,stroke:none;
+    style COL3 fill:none,stroke:none;
+    classDef actorStyle fill:#EBF8FF,stroke:#2B6CB0,stroke-width:2px,font-weight:bold,color:#000000;
+    classDef ucStyle fill:#FFFFFF,stroke:#2D3748,stroke-width:1.5px,color:#000000;
+    style SYSTEM stroke:#4A5568,stroke-width:2px,fill:#FAFAFA;
+    class SV,GV,AD actorStyle;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 ucStyle;
 ```
 
 ---
