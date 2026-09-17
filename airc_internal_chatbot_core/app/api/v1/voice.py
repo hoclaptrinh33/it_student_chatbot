@@ -86,12 +86,15 @@ async def generate_tts(
     from app.services.system_settings_service import get_effective_llm_settings
 
     voice = request.voice
-    if not voice:
+    if not voice or voice == "browser":
         try:
             effective = await get_effective_llm_settings()
-            voice = normalize_tts_voice(effective.get("tts_voice"))
+            eff_voice = effective.get("tts_voice")
+            voice = DEFAULT_TTS_VOICE if eff_voice == "browser" else normalize_tts_voice(eff_voice)
         except Exception:
             voice = DEFAULT_TTS_VOICE
+    elif voice == "browser":
+        voice = DEFAULT_TTS_VOICE
 
     # Log metadata only - NEVER log the text itself
     logger.info(

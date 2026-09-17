@@ -3,6 +3,7 @@ LLM Service - Tích hợp LLM (OpenAI-compatible)
 Service này chịu trách nhiệm gọi API của LLM (Local hoặc Cloud) để sinh câu trả lời
 """
 import os
+import asyncio
 import logging
 import httpx
 from typing import Optional, AsyncGenerator, Dict, Any
@@ -20,9 +21,24 @@ class LLMService:
     """
     
     def __init__(self):
-        # Khởi tạo client httpx không đồng bộ dùng chung để tối ưu hiệu năng kết nối (connection pooling)
-        # Thiết lập timeout mặc định là 60 giây vì các mô hình có thể cần thời gian suy luận lâu hơn
-        self.client = httpx.AsyncClient(timeout=60.0)
+        self._client: Optional[httpx.AsyncClient] = None
+        self._client_loop = None
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        if (
+            self._client is None
+            or self._client.is_closed
+            or getattr(self, "_client_loop", None) != current_loop
+        ):
+            self._client = httpx.AsyncClient(timeout=60.0)
+            self._client_loop = current_loop
+        return self._client
 
     def _configure(self) -> None:
         """Startup hook — client is ready; nothing extra to load."""

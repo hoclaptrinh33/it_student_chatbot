@@ -114,11 +114,11 @@ services:
       - JWT_SECRET_KEY=AIRC_SUPER_SECRET_KEY_2024
       - JWT_ALGORITHM=HS256
       - DEBUG=True
-      - HF_HOME=/app/models_cache
+      - HF_HOME=/tmp/hf_home
       - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
       - SEMANTIC_CACHE_ENABLED=false
       - CHAT_FAST_PATH=true
-      - PRELOAD_MODELS=true
+      - PRELOAD_MODELS=false
       - CUDA_VISIBLE_DEVICES=-1
       - EMBED_DEVICE=cpu
       - RERANK_DEVICE=cpu
@@ -147,6 +147,8 @@ services:
         condition: service_started
     networks:
       - it_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test:
         [
@@ -177,12 +179,12 @@ services:
       - POSTGRES_DB=it_student_chatbot
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      - HF_HOME=/app/models_cache
+      - HF_HOME=/tmp/hf_home
       - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
       - CUDA_VISIBLE_DEVICES=-1
       - EMBED_DEVICE=cpu
       - RERANK_DEVICE=cpu
-      - PRELOAD_MODELS=true
+      - PRELOAD_MODELS=false
     deploy:
       resources:
         reservations:
@@ -205,6 +207,8 @@ services:
         condition: service_started
     networks:
       - it_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test:
         [

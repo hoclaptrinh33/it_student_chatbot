@@ -9,7 +9,7 @@ from app.services.auth_service import AuthService
 SEED_HASH = "$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0"
 SEED_USER = {
     "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    "email": "sv01@fit.edu.vn",
+    "email": "sv01@eau.edu.vn",
     "hashed_password": SEED_HASH,
     "full_name": "Lê Hải Đăng",
     "role": "student",
@@ -36,12 +36,12 @@ def test_serialize_row_uuid_to_str():
         __table__ = type("T", (), {"columns": []})
         def __init__(self):
             self.id = UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
-            self.email = "sv01@fit.edu.vn"
+            self.email = "sv01@eau.edu.vn"
 
     # no __table__.columns walk — use dict path
     doc = BaseRepository.serialize_row({
         "id": UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-        "email": "sv01@fit.edu.vn",
+        "email": "sv01@eau.edu.vn",
     })
     assert doc["id"] == "cccccccc-cccc-cccc-cccc-cccccccccccc"
     assert isinstance(doc["id"], str)
@@ -72,11 +72,11 @@ async def test_login_seed_sv01():
     from datetime import datetime
     SEED_USER["created_at"] = datetime.utcnow()
     svc = AuthService(FakeUserRepo())
-    token = await svc.login("sv01@fit.edu.vn", "Pass123")
+    token = await svc.login("sv01@eau.edu.vn", "Pass123")
     assert token.access_token
     data = svc.verify_token(token.access_token)
     assert data.user_id == SEED_USER["id"]
-    assert data.email == "sv01@fit.edu.vn"
+    assert data.email == "sv01@eau.edu.vn"
     assert data.role == "student"
 
 
@@ -86,4 +86,4 @@ async def test_login_seed_sv01_wrong_password():
     SEED_USER["created_at"] = datetime.utcnow()
     svc = AuthService(FakeUserRepo())
     with pytest.raises(ValueError):
-        await svc.login("sv01@fit.edu.vn", "WrongPass")
+        await svc.login("sv01@eau.edu.vn", "WrongPass")

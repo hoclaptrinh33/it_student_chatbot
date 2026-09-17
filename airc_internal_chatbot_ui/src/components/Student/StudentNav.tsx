@@ -12,6 +12,7 @@ const TABS = [
     { href: '/dashboard/eligible-courses', label: 'Môn đủ ĐK' },
     { href: '/dashboard/transcript', label: 'Bảng điểm' },
     { href: '/dashboard/materials', label: 'Tài liệu' },
+    { href: '/dashboard/profile', label: 'Hồ sơ' },
 ];
 
 const StudentNav: React.FC = () => {
@@ -28,9 +29,9 @@ const StudentNav: React.FC = () => {
     const userMenu: MenuProps['items'] = [
         {
             key: 'profile',
-            label: 'Hồ sơ',
+            label: 'Hồ sơ sinh viên',
             icon: <UserOutlined />,
-            disabled: true,
+            onClick: () => router.push('/dashboard/profile'),
         },
         { type: 'divider' },
         {

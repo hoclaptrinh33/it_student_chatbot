@@ -85,7 +85,7 @@ def test_bind_material_api_persists_file_and_course_fields():
     app.dependency_overrides[get_current_user] = lambda: User(
         id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         user_id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-        email="teacher@fit.edu.vn",
+        email="teacher@eau.edu.vn",
         full_name="teacher",
         role=UserRole.TEACHER,
         is_active=True,
@@ -112,5 +112,33 @@ def test_bind_material_api_persists_file_and_course_fields():
         assert captured["payload"].file_id == FILE_ID
         assert captured["payload"].course_id == COURSE_ID
         assert captured["payload"].material_type == "SLIDE"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_material_api_success():
+    app = FastAPI()
+    app.include_router(academic_router, prefix="/api/v1/academic")
+
+    class FakeMaterialService:
+        async def delete_material(self, material_id: str):
+            return material_id == "55555555-5555-5555-5555-555555555555"
+
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        user_id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        email="teacher@eau.edu.vn",
+        full_name="teacher",
+        role=UserRole.TEACHER,
+        is_active=True,
+    )
+    app.dependency_overrides[get_learning_material_service] = lambda: FakeMaterialService()
+    client = TestClient(app)
+    try:
+        resp = client.delete("/api/v1/academic/materials/55555555-5555-5555-5555-555555555555")
+        assert resp.status_code == 204
+
+        resp_not_found = client.delete("/api/v1/academic/materials/00000000-0000-0000-0000-000000000000")
+        assert resp_not_found.status_code == 404
     finally:
         app.dependency_overrides.clear()

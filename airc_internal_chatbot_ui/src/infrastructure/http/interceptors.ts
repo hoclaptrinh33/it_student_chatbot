@@ -4,7 +4,7 @@ import { AxiosError, InternalAxiosRequestConfig } from 'axios';
  * Request Interceptor - Thêm token vào header
  * @param config - Axios config
  */
-import { getAuthToken } from '@/stores/authStore';
+import { storageService } from '@/services/storageService';
 
 /**
  * Request Interceptor - Thêm token vào header
@@ -12,8 +12,7 @@ import { getAuthToken } from '@/stores/authStore';
  */
 export const authRequestInterceptor = (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
-        // Use the centralized helper from authStore to get the token
-        const token = getAuthToken();
+        const token = storageService.getAccessToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

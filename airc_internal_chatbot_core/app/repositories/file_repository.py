@@ -44,6 +44,26 @@ class FileRepository(BaseRepository):
         row = await self.session.get(File, uid)
         return self.serialize_row(row)
 
+    async def get_by_name(self, name: str) -> Optional[dict]:
+        clean_name = name.strip()
+        result = await self.session.execute(
+            select(File).where(File.name.ilike(clean_name)).limit(1)
+        )
+        row = result.scalar_one_or_none()
+        return self.serialize_row(row) if row else None
+
+    async def get_by_id_or_name(self, identifier: str) -> Optional[dict]:
+        if not identifier:
+            return None
+        from urllib.parse import unquote
+        clean_id = unquote(identifier.strip())
+        uid = self.parse_id(clean_id)
+        if uid:
+            row = await self.session.get(File, uid)
+            if row:
+                return self.serialize_row(row)
+        return await self.get_by_name(clean_id)
+
     async def get_by_ids(self, file_ids: List[str]) -> List[dict]:
         uids = [uid for uid in (self.parse_id(fid) for fid in file_ids) if uid]
         if not uids:

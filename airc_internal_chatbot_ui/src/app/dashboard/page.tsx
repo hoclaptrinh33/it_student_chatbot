@@ -16,6 +16,7 @@ import AuthGuard from '@/components/Auth/AuthGuard';
 import useAuthStore from '@/stores/authStore';
 import statsService, { DashboardStats, RecentActivity } from '@/services/statsService';
 import Image from 'next/image';
+import TeacherDashboard from '@/components/Teacher/TeacherDashboard';
 
 const { Title, Text } = Typography;
 
@@ -36,7 +37,7 @@ export default function DashboardPage() {
 
     const router = useRouter();
 
-    // Fetch dashboard data
+    // Fetch dashboard data for admin
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
@@ -61,12 +62,20 @@ export default function DashboardPage() {
         setMounted(true);
         if (user?.role === 'student') {
             router.push('/dashboard/chat');
-        } else {
+        } else if (user?.role === 'admin') {
             fetchDashboardData();
         }
     }, [user, router]);
 
     if (user?.role === 'student') return null; // Prevent flash of dashboard content
+
+    if (user?.role === 'teacher') {
+        return (
+            <AuthGuard>
+                <TeacherDashboard />
+            </AuthGuard>
+        );
+    }
 
     // Helper function to format time ago
     const formatTimeAgo = (timestamp: string) => {

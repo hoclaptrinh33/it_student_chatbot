@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -18,8 +19,13 @@ ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# CPU torch: compose sets CUDA_VISIBLE_DEVICES=-1. Default PyPI torch pulls multi-GB
+# CUDA wheels that time out and fail pip hash checks on truncated downloads.
+RUN grep -vE '^torch$' requirements.txt > /tmp/requirements.notorch.txt \
+ && pip install --no-cache-dir --timeout 120 --retries 10 \
+      torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir --timeout 120 --retries 10 \
+      -r /tmp/requirements.notorch.txt
 
 # Copy application
 COPY . .

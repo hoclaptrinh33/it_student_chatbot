@@ -33,7 +33,16 @@ export default function ChatPage() {
 
     const { fetchDatasets } = useDatasetStore();
 
-    const [input, setInput] = useState('');
+    const [input, setInput] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const pending = sessionStorage.getItem('pending_chat_prompt');
+            if (pending) {
+                sessionStorage.removeItem('pending_chat_prompt');
+                return pending;
+            }
+        }
+        return '';
+    });
     const [chatbots, setChatbots] = useState<Chatbot[]>([]);
     const [isLiveVoiceOpen, setIsLiveVoiceOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -115,6 +124,13 @@ export default function ChatPage() {
         );
     }
 
+    const teacherSuggestions = [
+        'Tư vấn lộ trình học cho sinh viên muốn theo hướng AI',
+        'Tóm tắt các yêu cầu chuẩn đầu ra của ngành Công nghệ Thông tin',
+        'Tạo 5 câu hỏi trắc nghiệm ôn tập về kiến trúc máy tính',
+        'Kiểm tra các môn học thuộc định hướng Kỹ thuật phần mềm',
+    ];
+
     const currentChatbot = chatbots.find(c => c.id === chatbotId);
 
     return (
@@ -167,12 +183,37 @@ export default function ChatPage() {
                         <ChatTranscript
                             getBranchesAt={getBranchesAt}
                             emptyHint={
-                                <div className="flex flex-col items-center">
-                                    <div className="w-24 h-24 mb-6">
-                                        <Image src="/logo_fit.png" alt="Khoa CNTT" width={96} height={96} className="object-contain" />
+                                <div className="flex flex-col items-center max-w-xl mx-auto text-center">
+                                    <div className="w-20 h-20 mb-4">
+                                        <Image src="/logo_fit.png" alt="Khoa CNTT" width={80} height={80} className="object-contain" />
                                     </div>
-                                    <Title level={4} style={{ color: '#bfbfbf' }}>Trợ lý Cố vấn Học tập Khoa CNTT</Title>
-                                    <Text type="secondary">Hỏi về môn đủ điều kiện, bảng điểm, lộ trình, hoặc tài liệu học tập.</Text>
+                                    <Title level={4} style={{ color: '#0F4C81' }} className="!mb-1">
+                                        {user?.role === 'teacher' ? 'Trợ lý AI Giảng viên & Cố vấn Học tập' : 'Trợ lý Cố vấn Học tập Khoa CNTT'}
+                                    </Title>
+                                    <Text type="secondary" className="text-sm mb-5">
+                                        {user?.role === 'teacher'
+                                            ? 'Hỗ trợ Thầy/Cô cố vấn lộ trình cho sinh viên, tra cứu quy chế, tạo câu hỏi trắc nghiệm và soạn đề cương.'
+                                            : 'Hỏi về môn đủ điều kiện, bảng điểm, lộ trình, hoặc tài liệu học tập.'}
+                                    </Text>
+
+                                    {user?.role === 'teacher' && (
+                                        <div className="w-full space-y-2 mt-2 text-left">
+                                            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">
+                                                Gợi ý câu hỏi sư phạm & cố vấn:
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {teacherSuggestions.map((sug, i) => (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => setInput(sug)}
+                                                        className="p-2.5 bg-white border border-gray-200 rounded-xl hover:border-blue-400 hover:shadow-xs transition-all cursor-pointer text-xs text-gray-700 hover:text-blue-700"
+                                                    >
+                                                        💡 {sug}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             }
                         />

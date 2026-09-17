@@ -13,6 +13,11 @@ TTS_VOICE_CATALOG = [
         "label": "Nam Minh (nam)",
         "locale": "vi-VN",
     },
+    {
+        "id": "browser",
+        "label": "Trình duyệt (Web Speech - Không delay)",
+        "locale": "vi-VN",
+    },
 ]
 
 ALLOWED_TTS_VOICES = {item["id"] for item in TTS_VOICE_CATALOG}

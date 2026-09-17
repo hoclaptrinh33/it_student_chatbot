@@ -32,7 +32,9 @@ export default function LoginPage() {
         setFormError(null);
         try {
             console.log('[LoginPage] Attempting login...');
-            await login(values.email, values.password);
+            // Strip any hidden characters like zero-width space (\u200b) or whitespace
+            const email = (values.email || '').replace(/[\u200B-\u200D\uFEFF\u00A0\s]/g, '');
+            await login(email, values.password);
 
             // QUAN TRONG: Hien thi notification o component level
             // Khong dung message trong store vi khong co React context
@@ -85,10 +87,14 @@ export default function LoginPage() {
                         <Text type="secondary">Đăng nhập để được tư vấn lộ trình và tài liệu học tập</Text>
                     </div>
 
-                    {(error || formError) && (
+                    {(Boolean(formError || error)) && (
                         <Alert
                             message="Lỗi đăng nhập"
-                            description={formError || error || 'Đăng nhập thất bại'}
+                            description={
+                                formError ||
+                                (typeof error === 'string' ? error : JSON.stringify(error)) ||
+                                'Đăng nhập thất bại'
+                            }
                             type="error"
                             showIcon
                             className="mb-4"
@@ -104,13 +110,13 @@ export default function LoginPage() {
                         <Form.Item
                             name="email"
                             rules={[
-                                { required: true, message: 'Vui lòng nhập Email!' },
-                                { type: 'email', message: 'Email không hợp lệ!' },
+                                { required: true, message: 'Vui lòng nhập Email hoặc Mã SV / Tên đăng nhập!' },
                             ]}
+                            normalize={(value) => (typeof value === 'string' ? value.trim() : value)}
                         >
                             <Input
                                 prefix={<MailOutlined className="site-form-item-icon" />}
-                                placeholder="Email"
+                                placeholder="Email hoặc Mã SV (VD: admin, sv01, SV001...)"
                             />
                         </Form.Item>
 

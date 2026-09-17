@@ -275,3 +275,23 @@ class DatasetService:
     ) -> List[dict]:
         """Lấy danh sách các chunks dữ liệu của một file trong dataset"""
         return await self.chunk_repo.get_by_dataset_file(dataset_id, dataset_file_id)
+
+    async def retry_failed_files(self, dataset_id: str) -> int:
+        """Đẩy lại các file lỗi hoặc pending vào queue xử lý"""
+        from app.core.queues import ingest_queue
+        from app.jobs.ingest import process_dataset_file_job
+        from app.models.enums import DatasetFileStatus
+
+        dataset_files = await self.dataset_file_repo.get_by_dataset(dataset_id)
+        retried = 0
+        for df in dataset_files:
+            if df.get("status") in ["error", "pending"]:
+                await self.dataset_file_repo.update_status(df["id"], DatasetFileStatus.PENDING)
+                ingest_queue.enqueue(
+                    process_dataset_file_job,
+                    dataset_id,
+                    str(df["id"]),
+                    job_timeout='1h'
+                )
+                retried += 1
+        return retried

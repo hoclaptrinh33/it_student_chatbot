@@ -29,6 +29,7 @@ import academicService, {
 } from '@/services/academicService';
 import courseService, { Course } from '@/services/courseService';
 import { authService, User } from '@/services/authService';
+import { useRouter } from 'next/navigation';
 import useAuthStore from '@/stores/authStore';
 
 const { Title, Text, Paragraph } = Typography;
@@ -46,6 +47,7 @@ function axiosDetail(err: unknown, fallback: string): string {
 }
 
 export default function AdminGradesPage() {
+    const router = useRouter();
     const { token, user } = useAuthStore();
     const [students, setStudents] = useState<User[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -56,6 +58,12 @@ export default function AdminGradesPage() {
     const [saving, setSaving] = useState(false);
     const [importing, setImporting] = useState(false);
     const [form] = Form.useForm();
+
+    useEffect(() => {
+        if (user?.role === 'teacher') {
+            router.replace('/dashboard/grades');
+        }
+    }, [user, router]);
 
     const activeUserId = selectedUserId || manualUserId.trim() || undefined;
 

@@ -6,9 +6,9 @@
 --   postgresql+asyncpg://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot
 --
 -- Tài khoản mẫu (mật khẩu Pass123, hash pbkdf2-sha256):
---   admin@fit.edu.vn
---   gv01@fit.edu.vn
---   sv01@fit.edu.vn
+--   admin@eau.edu.vn
+--   gv01@eau.edu.vn
+--   sv01@eau.edu.vn
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -477,7 +477,7 @@ INSERT INTO users (id, email, hashed_password, full_name, role, student_code, de
 VALUES
     (
         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-        'admin@fit.edu.vn',
+        'admin@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Quản trị viên Khoa CNTT',
         'admin',
@@ -487,7 +487,7 @@ VALUES
     ),
     (
         'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-        'gv01@fit.edu.vn',
+        'gv01@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Nguyễn Văn An',
         'teacher',
@@ -497,7 +497,7 @@ VALUES
     ),
     (
         'cccccccc-cccc-cccc-cccc-cccccccccccc',
-        'sv01@fit.edu.vn',
+        'sv01@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Lê Hải Đăng',
         'student',
@@ -681,7 +681,7 @@ VALUES (
         'temperature', 0.3,
         'no_context_behavior', 'reject',
         'system_prompt',
-            'Bạn là Trợ lý Cố vấn Học tập & Tài liệu Khoa CNTT. Trả lời tiếng Việt, súc tích; liệt kê mã môn, tên môn và lý do. Chỉ dùng mã môn/tín chỉ/tiên quyết từ [AcademicFacts].'
+            'Cô là giảng viên cố vấn Khoa CNTT, nói chuyện tự nhiên với em bằng tiếng Việt. Không dùng từ máy PASSED/FAILED/PREREQUISITE/[AcademicFacts]. Tài liệu phải là link markdown /files/<file_id>/view.'
     ),
     TRUE
 );
@@ -725,7 +725,7 @@ INSERT INTO users (id, email, hashed_password, full_name, role, student_code, de
 VALUES
     (
         '11111111-1111-1111-1111-111111111111',
-        'svweb@fit.edu.vn',
+        'svweb@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Trần Minh Quân',
         'student',
@@ -735,7 +735,7 @@ VALUES
     ),
     (
         '22222222-2222-2222-2222-222222222222',
-        'svai@fit.edu.vn',
+        'svai@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Đặng Thu Hà',
         'student',
@@ -745,7 +745,7 @@ VALUES
     ),
     (
         '33333333-3333-3333-3333-333333333333',
-        'svnew@fit.edu.vn',
+        'svnew@eau.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Vũ Nhật Nam',
         'student',
@@ -826,3 +826,437 @@ FROM (VALUES
 ) AS rec (course_code, status, grade, semester_taken, attempt_count)
 JOIN courses c ON c.course_code = rec.course_code
 ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- =============================================================================
+-- 10. SEED — Dữ liệu mẫu toàn diện CNTT (K21 - K24, môn học HK1-HK8, bảng điểm, tài liệu)
+-- Đồng bộ từ migrations/006_seed_comprehensive_data.sql
+-- =============================================================================
+
+INSERT INTO courses (
+    course_code, course_name, credits, theory_hours, practice_hours,
+    semester, is_mandatory, career_track, description
+) VALUES
+    ('INT1105', 'Giải tích cho CNTT', 3, 45, 0, 1, TRUE, 'GENERAL',
+     'Giới hạn, đạo hàm, vi phân, tích phân và chuỗi số — nền tảng toán học cho giải thuật và tính toán khoa học.'),
+    ('INT1106', 'Xác suất thống kê ứng dụng', 3, 45, 0, 2, TRUE, 'GENERAL',
+     'Biến ngẫu nhiên, phân phối xác suất, ước lượng tham số, kiểm định giả thuyết và hồi quy tuyến tính.'),
+    ('INT2205', 'Khai phá dữ liệu', 3, 30, 30, 4, FALSE, 'DATA',
+     'Tiền xử lý dữ liệu, khai phá tập phổ biến, luật kết hợp, phân loại, gom cụm dữ liệu quy mô lớn.'),
+    ('INT2206', 'Kiểm thử và đảm bảo chất lượng phần mềm', 3, 30, 30, 4, FALSE, 'SOFTWARE',
+     'Kỹ thuật kiểm thử hộp đen, hộp trắng, Unit Test, Test tự động với Selenium/Jest, quản trị lỗi và chuẩn chất lượng phần mềm.'),
+    ('INT2207', 'Quản trị mạng và hệ thống', 3, 30, 30, 4, FALSE, 'NETWORK',
+     'Cài đặt, cấu hình Linux/Windows Server, DNS, DHCP, Web Server, chính sách bảo mật máy chủ, backup và monitor.'),
+    ('INT3106', 'Hệ quản trị cơ sở dữ liệu nâng cao', 3, 30, 30, 5, FALSE, 'DATA',
+     'Tối ưu hóa câu truy vấn, cơ chế Index, Transaction isolation, cơ sở dữ liệu phân tán và NoSQL (MongoDB, Redis).'),
+    ('INT3107', 'Kiến trúc và thiết kế phần mềm', 3, 30, 30, 5, FALSE, 'SOFTWARE',
+     'Mẫu thiết kế Design Patterns, kiến trúc Microservices, Clean Architecture, Domain-Driven Design và Event-Driven.'),
+    ('INT3108', 'Phát triển ứng dụng di động', 3, 30, 30, 5, FALSE, 'SOFTWARE',
+     'Lập trình ứng dụng mobile đa nền tảng Flutter/React Native, giao tiếp REST API, quản lý State và cơ sở dữ liệu cục bộ.'),
+    ('INT3203', 'Kỹ thuật dữ liệu lớn', 3, 30, 30, 6, FALSE, 'DATA',
+     'Hệ sinh thái Apache Hadoop, HDFS, MapReduce, Apache Spark xử lý dữ liệu lớn trong bộ nhớ và Apache Kafka stream data.'),
+    ('INT3204', 'An toàn mạng không dây và di động', 3, 30, 30, 6, FALSE, 'SECURITY',
+     'Bảo mật sóng vô tuyến, WPA2/WPA3, phân tích gói tin không dây, bảo mật mạng 4G/5G và thiết bị IoT.'),
+    ('INT3205', 'Thị giác máy tính', 3, 30, 30, 6, FALSE, 'AI',
+     'Xử lý ảnh số, phát hiện cạnh, trích xuất đặc trưng, phân loại ảnh bằng CNN, nhận diện vật thể YOLO bằng OpenCV và PyTorch.'),
+    ('INT3206', 'Phát triển phần mềm an toàn', 3, 30, 30, 6, FALSE, 'SECURITY',
+     'Phòng chống OWASP Top 10, phân tích mã nguồn tĩnh (SAST), quy trình DevSecOps và kiểm thử bảo mật ứng dụng.'),
+    ('INT4101', 'Thực tập tốt nghiệp doanh nghiệp', 3, 0, 90, 7, TRUE, 'GENERAL',
+     'Thực tập trực tiếp tại các công ty/doanh nghiệp công nghệ trong 8-12 tuần, tham gia dự án thực tế và viết báo cáo tốt nghiệp.'),
+    ('INT4102', 'Quản lý dự án CNTT', 3, 45, 0, 7, TRUE, 'SOFTWARE',
+     'Mô hình phát triển Agile/Scrum, lập kế hoạch tiến độ, ước lượng chi phí, quản lý rủi ro dự án phần mềm.'),
+    ('INT4103', 'Chuyên đề công nghệ mới và khởi nghiệp số', 3, 45, 0, 7, FALSE, 'GENERAL',
+     'Tìm hiểu Generative AI, Blockchain, Web3, xây dựng sản phẩm tối thiểu (MVP) và kế hoạch khởi nghiệp công nghệ.'),
+    ('INT4104', 'DevOps và Tự động hóa hạ tầng', 3, 30, 30, 7, FALSE, 'NETWORK',
+     'Tự động hóa CI/CD với GitHub Actions, Quản lý hạ tầng bằng mã (IaC) Terraform/Ansible, giám sát hạ tầng Prometheus/Grafana.'),
+    ('INT4105', 'Trực quan hóa dữ liệu và BI', 3, 30, 30, 7, FALSE, 'DATA',
+     'Xây dựng báo cáo phân tích kinh doanh thông minh với PowerBI, Tableau, Data Mart, mô hình dữ liệu sao (Star Schema).'),
+    ('INT4201', 'Khóa luận tốt nghiệp', 6, 0, 180, 8, FALSE, 'GENERAL',
+     'Thực hiện đề tài nghiên cứu hoặc phát triển giải pháp hệ thống chuyên sâu dưới sự hướng dẫn của giảng viên và bảo vệ trước hội đồng khoa.'),
+    ('INT4202', 'Chuyên đề tốt nghiệp 1 - AI & BigData ứng dụng', 3, 30, 30, 8, FALSE, 'AI',
+     'Học phần thay thế khóa luận tốt nghiệp định hướng Trí tuệ nhân tạo và Phân tích dữ liệu lớn.'),
+    ('INT4203', 'Chuyên đề tốt nghiệp 2 - Hệ thống phân tán và Cloud', 3, 30, 30, 8, FALSE, 'SOFTWARE',
+     'Học phần thay thế khóa luận tốt nghiệp định hướng Hệ thống phân tán và Kỹ thuật phần mềm đám mây.')
+ON CONFLICT (course_code) DO NOTHING;
+
+INSERT INTO course_prerequisites (course_id, prerequisite_course_id, relation_type)
+SELECT c.id, p.id, rel.relation_type
+FROM (VALUES
+    ('INT1106', 'INT1105', 'PREVIOUS'),
+    ('INT2205', 'INT1202', 'PREREQUISITE'),
+    ('INT2205', 'INT1201', 'PREVIOUS'),
+    ('INT2206', 'INT1204', 'PREREQUISITE'),
+    ('INT2207', 'INT2102', 'PREREQUISITE'),
+    ('INT3106', 'INT1202', 'PREREQUISITE'),
+    ('INT3107', 'INT2201', 'PREREQUISITE'),
+    ('INT3108', 'INT1204', 'PREREQUISITE'),
+    ('INT3108', 'INT2104', 'PREVIOUS'),
+    ('INT3203', 'INT1202', 'PREREQUISITE'),
+    ('INT3203', 'INT3105', 'PREREQUISITE'),
+    ('INT3204', 'INT3103', 'PREREQUISITE'),
+    ('INT3205', 'INT3101', 'PREREQUISITE'),
+    ('INT3205', 'INT1103', 'PREVIOUS'),
+    ('INT3206', 'INT2203', 'PREREQUISITE'),
+    ('INT3206', 'INT2201', 'PREVIOUS'),
+    ('INT4101', 'INT3202', 'PREREQUISITE'),
+    ('INT4101', 'INT2201', 'PREVIOUS'),
+    ('INT4102', 'INT2201', 'PREREQUISITE'),
+    ('INT4104', 'INT3105', 'PREREQUISITE'),
+    ('INT4105', 'INT2205', 'PREREQUISITE'),
+    ('INT4201', 'INT4101', 'PREREQUISITE'),
+    ('INT4201', 'INT3202', 'PREREQUISITE'),
+    ('INT4202', 'INT4101', 'PREREQUISITE'),
+    ('INT4202', 'INT3101', 'PREREQUISITE'),
+    ('INT4203', 'INT4101', 'PREREQUISITE'),
+    ('INT4203', 'INT3105', 'PREREQUISITE')
+) AS rel (course_code, prereq_code, relation_type)
+JOIN courses c ON c.course_code = rel.course_code
+JOIN courses p ON p.course_code = rel.prereq_code
+ON CONFLICT (course_id, prerequisite_course_id, relation_type) DO NOTHING;
+
+INSERT INTO users (id, email, hashed_password, full_name, role, student_code, department, is_active)
+VALUES
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'gv_advisor@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'PGS.TS Trần Văn Hùng', 'teacher', NULL, 'Khoa CNTT', TRUE),
+    ('44444444-2401-4444-4444-000000000001', 'sv24_top@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Hoàng Minh Đức', 'student', '20240101', 'Khoa CNTT', TRUE),
+    ('44444444-2402-4444-4444-000000000002', 'sv24_warn@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Lê Quốc Tuấn', 'student', '20240102', 'Khoa CNTT', TRUE),
+    ('44444444-2301-4444-4444-000000000003', 'sv23_soft@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Đỗ Phương Linh', 'student', '20230201', 'Khoa CNTT', TRUE),
+    ('44444444-2302-4444-4444-000000000004', 'sv23_net@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Hải Nam', 'student', '20230202', 'Khoa CNTT', TRUE),
+    ('44444444-2303-4444-4444-000000000005', 'sv23_avg@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Phạm Ngọc Thảo', 'student', '20230203', 'Khoa CNTT', TRUE),
+    ('44444444-2201-4444-4444-000000000006', 'sv22_data@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Trần Gia Huy', 'student', '20220301', 'Khoa CNTT', TRUE),
+    ('44444444-2202-4444-4444-000000000007', 'sv22_warn@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Bùi Tiến Dũng', 'student', '20220302', 'Khoa CNTT', TRUE),
+    ('44444444-2203-4444-4444-000000000008', 'sv22_web@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Vũ Mai Phương', 'student', '20220303', 'Khoa CNTT', TRUE),
+    ('44444444-2101-4444-4444-000000000009', 'sv21_top@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Khắc Hưng', 'student', '20210401', 'Khoa CNTT', TRUE),
+    ('44444444-2102-4444-4444-000000000010', 'sv21_delay@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Chu Thanh Tùng', 'student', '20210402', 'Khoa CNTT', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.code = u.role
+WHERE u.id IN (
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2'::UUID,
+    '44444444-2401-4444-4444-000000000001'::UUID,
+    '44444444-2402-4444-4444-000000000002'::UUID,
+    '44444444-2301-4444-4444-000000000003'::UUID,
+    '44444444-2302-4444-4444-000000000004'::UUID,
+    '44444444-2303-4444-4444-000000000005'::UUID,
+    '44444444-2201-4444-4444-000000000006'::UUID,
+    '44444444-2202-4444-4444-000000000007'::UUID,
+    '44444444-2203-4444-4444-000000000008'::UUID,
+    '44444444-2101-4444-4444-000000000009'::UUID,
+    '44444444-2102-4444-4444-000000000010'::UUID
+)
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- Bảng điểm K24 Tân SV xuất sắc
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2401-4444-4444-000000000001'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      9.50, '2024-1', 1),
+    ('INT1102', 'PASSED',      9.00, '2024-1', 1),
+    ('INT1103', 'PASSED',      9.00, '2024-1', 1),
+    ('INT1104', 'PASSED',      9.50, '2024-1', 1),
+    ('INT1105', 'PASSED',      8.50, '2024-1', 1),
+    ('INT1201', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT1202', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT1203', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT1204', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT1106', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K24 Trượt môn nền tảng
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2402-4444-4444-000000000002'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'FAILED',      3.00, '2024-1', 1),
+    ('INT1102', 'FAILED',      3.50, '2024-1', 1),
+    ('INT1103', 'PASSED',      5.50, '2024-1', 1),
+    ('INT1104', 'PASSED',      6.00, '2024-1', 1),
+    ('INT1105', 'FAILED',      3.50, '2024-1', 1),
+    ('INT1203', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K23 Software
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2301-4444-4444-000000000003'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      9.00, '2023-1', 1),
+    ('INT1102', 'PASSED',      8.00, '2023-1', 1),
+    ('INT1103', 'PASSED',      7.50, '2023-1', 1),
+    ('INT1104', 'PASSED',      8.50, '2023-1', 1),
+    ('INT1105', 'PASSED',      8.00, '2023-1', 1),
+    ('INT1201', 'PASSED',      8.50, '2023-2', 1),
+    ('INT1202', 'PASSED',      8.00, '2023-2', 1),
+    ('INT1203', 'PASSED',      7.50, '2023-2', 1),
+    ('INT1204', 'PASSED',      9.00, '2023-2', 1),
+    ('INT1106', 'PASSED',      8.00, '2023-2', 1),
+    ('INT2101', 'PASSED',      8.00, '2024-1', 1),
+    ('INT2102', 'PASSED',      8.00, '2024-1', 1),
+    ('INT2103', 'PASSED',      8.50, '2024-1', 1),
+    ('INT2104', 'PASSED',      8.50, '2024-1', 1),
+    ('INT2201', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT2206', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT2204', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K23 Network/Security
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2302-4444-4444-000000000004'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      7.50, '2023-1', 1),
+    ('INT1102', 'PASSED',      8.00, '2023-1', 1),
+    ('INT1103', 'PASSED',      7.00, '2023-1', 1),
+    ('INT1104', 'PASSED',      8.00, '2023-1', 1),
+    ('INT1105', 'PASSED',      7.00, '2023-1', 1),
+    ('INT1201', 'PASSED',      7.50, '2023-2', 1),
+    ('INT1202', 'PASSED',      7.50, '2023-2', 1),
+    ('INT1203', 'PASSED',      8.50, '2023-2', 1),
+    ('INT1204', 'PASSED',      7.00, '2023-2', 1),
+    ('INT1106', 'PASSED',      7.50, '2023-2', 1),
+    ('INT2101', 'PASSED',      8.00, '2024-1', 1),
+    ('INT2102', 'PASSED',      9.00, '2024-1', 1),
+    ('INT2103', 'PASSED',      7.00, '2024-1', 1),
+    ('INT2104', 'PASSED',      7.00, '2024-1', 1),
+    ('INT2203', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT2207', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT2201', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K23 Trung bình khá
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2303-4444-4444-000000000005'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      6.00, '2023-1', 1),
+    ('INT1102', 'PASSED',      5.50, '2023-1', 1),
+    ('INT1103', 'PASSED',      6.00, '2023-1', 1),
+    ('INT1104', 'PASSED',      7.00, '2023-1', 1),
+    ('INT1105', 'PASSED',      5.50, '2023-1', 1),
+    ('INT1201', 'PASSED',      6.00, '2023-2', 1),
+    ('INT1202', 'PASSED',      6.50, '2023-2', 1),
+    ('INT1203', 'PASSED',      5.50, '2023-2', 1),
+    ('INT1204', 'PASSED',      6.50, '2023-2', 1),
+    ('INT1106', 'PASSED',      6.00, '2023-2', 1),
+    ('INT2101', 'PASSED',      6.00, '2024-1', 1),
+    ('INT2102', 'PASSED',      6.50, '2024-1', 1),
+    ('INT2103', 'PASSED',      6.00, '2024-1', 1),
+    ('INT2104', 'PASSED',      6.50, '2024-1', 1),
+    ('INT2201', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT2202', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K22 Data & AI
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2201-4444-4444-000000000006'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      8.50, '2022-1', 1),
+    ('INT1102', 'PASSED',      8.00, '2022-1', 1),
+    ('INT1103', 'PASSED',      9.00, '2022-1', 1),
+    ('INT1104', 'PASSED',      8.50, '2022-1', 1),
+    ('INT1105', 'PASSED',      8.50, '2022-1', 1),
+    ('INT1201', 'PASSED',      8.50, '2022-2', 1),
+    ('INT1202', 'PASSED',      9.00, '2022-2', 1),
+    ('INT1203', 'PASSED',      7.50, '2022-2', 1),
+    ('INT1204', 'PASSED',      8.00, '2022-2', 1),
+    ('INT1106', 'PASSED',      9.00, '2022-2', 1),
+    ('INT2101', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2102', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2103', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2104', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2201', 'PASSED',      8.00, '2023-2', 1),
+    ('INT2202', 'PASSED',      9.00, '2023-2', 1),
+    ('INT2203', 'PASSED',      8.00, '2023-2', 1),
+    ('INT2205', 'PASSED',      9.00, '2023-2', 1),
+    ('INT3101', 'PASSED',      9.00, '2024-1', 1),
+    ('INT3102', 'PASSED',      8.50, '2024-1', 1),
+    ('INT3105', 'PASSED',      8.50, '2024-1', 1),
+    ('INT3106', 'PASSED',      9.00, '2024-1', 1),
+    ('INT3201', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT3203', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT3205', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT3202', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K22 Cảnh báo học tập mức 2
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2202-4444-4444-000000000007'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      6.00, '2022-1', 1),
+    ('INT1102', 'PASSED',      5.00, '2022-1', 1),
+    ('INT1103', 'PASSED',      5.50, '2022-1', 1),
+    ('INT1104', 'PASSED',      6.50, '2022-1', 1),
+    ('INT1105', 'FAILED',      3.50, '2022-1', 1),
+    ('INT1201', 'PASSED',      5.00, '2022-2', 1),
+    ('INT1202', 'FAILED',      3.50, '2022-2', 1),
+    ('INT1203', 'PASSED',      5.00, '2022-2', 1),
+    ('INT1204', 'PASSED',      5.50, '2022-2', 1),
+    ('INT1106', 'FAILED',      3.00, '2022-2', 1),
+    ('INT2101', 'FAILED',      3.00, '2023-1', 1),
+    ('INT2102', 'FAILED',      3.50, '2023-1', 1),
+    ('INT2103', 'FAILED',      3.00, '2023-1', 1),
+    ('INT2104', 'PASSED',      5.00, '2023-1', 1),
+    ('INT2201', 'FAILED',      3.00, '2023-2', 1),
+    ('INT2202', 'FAILED',      3.50, '2023-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K22 Web Fullstack & Cloud
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2203-4444-4444-000000000008'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      8.00, '2022-1', 1),
+    ('INT1102', 'PASSED',      7.50, '2022-1', 1),
+    ('INT1103', 'PASSED',      8.00, '2022-1', 1),
+    ('INT1104', 'PASSED',      8.50, '2022-1', 1),
+    ('INT1105', 'PASSED',      7.50, '2022-1', 1),
+    ('INT1201', 'PASSED',      8.00, '2022-2', 1),
+    ('INT1202', 'PASSED',      8.50, '2022-2', 1),
+    ('INT1203', 'PASSED',      7.50, '2022-2', 1),
+    ('INT1204', 'PASSED',      9.00, '2022-2', 1),
+    ('INT1106', 'PASSED',      8.00, '2022-2', 1),
+    ('INT2101', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2102', 'PASSED',      8.00, '2023-1', 1),
+    ('INT2103', 'PASSED',      8.50, '2023-1', 1),
+    ('INT2104', 'PASSED',      9.00, '2023-1', 1),
+    ('INT2201', 'PASSED',      8.50, '2023-2', 1),
+    ('INT2203', 'PASSED',      8.00, '2023-2', 1),
+    ('INT2204', 'PASSED',      9.50, '2023-2', 1),
+    ('INT3104', 'PASSED',      9.00, '2024-1', 1),
+    ('INT3105', 'PASSED',      8.50, '2024-1', 1),
+    ('INT3202', 'IN_PROGRESS', NULL, '2024-2', 1),
+    ('INT4104', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K21 Năm 4 Xuất sắc
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2101-4444-4444-000000000009'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      9.00, '2021-1', 1),
+    ('INT1102', 'PASSED',      8.50, '2021-1', 1),
+    ('INT1103', 'PASSED',      9.00, '2021-1', 1),
+    ('INT1104', 'PASSED',      9.50, '2021-1', 1),
+    ('INT1105', 'PASSED',      8.50, '2021-1', 1),
+    ('INT1201', 'PASSED',      9.00, '2021-2', 1),
+    ('INT1202', 'PASSED',      9.00, '2021-2', 1),
+    ('INT1203', 'PASSED',      8.00, '2021-2', 1),
+    ('INT1204', 'PASSED',      9.50, '2021-2', 1),
+    ('INT1106', 'PASSED',      8.50, '2021-2', 1),
+    ('INT2101', 'PASSED',      8.50, '2022-1', 1),
+    ('INT2102', 'PASSED',      8.50, '2022-1', 1),
+    ('INT2103', 'PASSED',      9.00, '2022-1', 1),
+    ('INT2104', 'PASSED',      9.00, '2022-1', 1),
+    ('INT2201', 'PASSED',      9.00, '2022-2', 1),
+    ('INT2202', 'PASSED',      8.50, '2022-2', 1),
+    ('INT2203', 'PASSED',      8.50, '2022-2', 1),
+    ('INT2204', 'PASSED',      9.00, '2022-2', 1),
+    ('INT2206', 'PASSED',      9.00, '2022-2', 1),
+    ('INT3101', 'PASSED',      8.50, '2023-1', 1),
+    ('INT3104', 'PASSED',      9.00, '2023-1', 1),
+    ('INT3105', 'PASSED',      9.00, '2023-1', 1),
+    ('INT3107', 'PASSED',      9.00, '2023-1', 1),
+    ('INT3201', 'PASSED',      8.50, '2023-2', 1),
+    ('INT3202', 'PASSED',      9.50, '2023-2', 1),
+    ('INT4101', 'PASSED',     10.00, '2024-1', 1),
+    ('INT4102', 'PASSED',      9.00, '2024-1', 1),
+    ('INT4103', 'PASSED',      9.00, '2024-1', 1),
+    ('INT4104', 'PASSED',      9.00, '2024-1', 1),
+    ('INT4201', 'IN_PROGRESS', NULL, '2024-2', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Bảng điểm K21 Chậm tiến độ do nợ INT1203
+INSERT INTO student_records (user_id, course_id, status, grade, semester_taken, attempt_count)
+SELECT '44444444-2102-4444-4444-000000000010'::UUID, c.id, rec.status, rec.grade, rec.semester_taken, rec.attempt_count
+FROM (VALUES
+    ('INT1101', 'PASSED',      7.00, '2021-1', 1),
+    ('INT1102', 'PASSED',      6.50, '2021-1', 1),
+    ('INT1103', 'PASSED',      6.00, '2021-1', 1),
+    ('INT1104', 'PASSED',      7.50, '2021-1', 1),
+    ('INT1105', 'PASSED',      6.00, '2021-1', 1),
+    ('INT1201', 'PASSED',      7.00, '2021-2', 1),
+    ('INT1202', 'PASSED',      7.50, '2021-2', 1),
+    ('INT1203', 'FAILED',      3.50, '2021-2', 1),
+    ('INT1204', 'PASSED',      8.00, '2021-2', 1),
+    ('INT1106', 'PASSED',      6.50, '2021-2', 1),
+    ('INT2102', 'PASSED',      7.00, '2022-1', 1),
+    ('INT2103', 'PASSED',      7.50, '2022-1', 1),
+    ('INT2104', 'PASSED',      8.00, '2022-1', 1),
+    ('INT2201', 'PASSED',      7.50, '2022-2', 1),
+    ('INT2204', 'PASSED',      8.00, '2022-2', 1),
+    ('INT2206', 'PASSED',      7.50, '2022-2', 1),
+    ('INT3104', 'PASSED',      7.50, '2023-1', 1),
+    ('INT3108', 'PASSED',      8.00, '2023-1', 1),
+    ('INT3202', 'PASSED',      8.00, '2023-2', 1),
+    ('INT4101', 'PASSED',      8.00, '2024-1', 1),
+    ('INT4102', 'PASSED',      7.50, '2024-1', 1)
+) AS rec (course_code, status, grade, semester_taken, attempt_count)
+JOIN courses c ON c.course_code = rec.course_code
+ON CONFLICT (user_id, course_id) DO NOTHING;
+
+-- Tài liệu học tập cho các môn CNTT
+INSERT INTO learning_materials (course_id, title, material_type, file_url)
+SELECT c.id, m.title, m.material_type, m.file_url
+FROM (VALUES
+    ('INT1102', 'Đề cương chi tiết — Toán rời rạc', 'SYLLABUS', '/materials/INT1102/syllabus.pdf'),
+    ('INT1102', 'Slide bài giảng Lý thuyết Đồ thị và Logic mệnh đề', 'SLIDE', '/materials/INT1102/slides.pdf'),
+    ('INT1102', 'Giáo trình Toán rời rạc ứng dụng trong Tin học', 'TEXTBOOK', '/materials/INT1102/textbook.pdf'),
+    ('INT1102', 'Đề thi trắc nghiệm & tự luận các năm', 'EXAM', '/materials/INT1102/exam.pdf'),
+    ('INT1103', 'Đề cương chi tiết — Đại số tuyến tính', 'SYLLABUS', '/materials/INT1103/syllabus.pdf'),
+    ('INT1103', 'Slide Không gian vector và Trị riêng, Vector riêng', 'SLIDE', '/materials/INT1103/slides.pdf'),
+    ('INT1201', 'Giáo trình Cấu trúc dữ liệu và Giải thuật — ThS. Lê Hải Đăng', 'TEXTBOOK', '/materials/INT1201/textbook.pdf'),
+    ('INT1201', 'Ngân hàng bài tập lớn & Đề thi kết thúc học phần', 'EXAM', '/materials/INT1201/exam.pdf'),
+    ('INT1204', 'Đề cương chi tiết — Lập trình hướng đối tượng (Java/C#)', 'SYLLABUS', '/materials/INT1204/syllabus.pdf'),
+    ('INT1204', 'Slide Nguyên lý SOLID và 4 tính chất OOP', 'SLIDE', '/materials/INT1204/slides.pdf'),
+    ('INT1204', 'Giáo trình Lập trình Hướng đối tượng chuẩn Khoa CNTT', 'TEXTBOOK', '/materials/INT1204/textbook.pdf'),
+    ('INT1204', 'Ngân hàng đề thi thực hành OOP Java', 'EXAM', '/materials/INT1204/exam.pdf'),
+    ('INT2101', 'Đề cương chi tiết — Hệ điều hành', 'SYLLABUS', '/materials/INT2101/syllabus.pdf'),
+    ('INT2101', 'Slide Quản lý tiến trình, luồng và đồng bộ hóa (Semaphore/Mutex)', 'SLIDE', '/materials/INT2101/slides.pdf'),
+    ('INT2101', 'Giáo trình Hệ điều hành hiện đại (Operating Systems Concepts)', 'TEXTBOOK', '/materials/INT2101/textbook.pdf'),
+    ('INT2102', 'Đề cương chi tiết — Mạng máy tính', 'SYLLABUS', '/materials/INT2102/syllabus.pdf'),
+    ('INT2102', 'Slide Mô hình OSI, TCP/IP và Giao thức Định tuyến', 'SLIDE', '/materials/INT2102/slides.pdf'),
+    ('INT2102', 'Giáo trình Mạng máy tính căn bản & nâng cao', 'TEXTBOOK', '/materials/INT2102/textbook.pdf'),
+    ('INT2102', 'Tập bài tập phân tích gói tin với Wireshark', 'EXAM', '/materials/INT2102/exam.pdf'),
+    ('INT2201', 'Đề cương chi tiết — Công nghệ phần mềm', 'SYLLABUS', '/materials/INT2201/syllabus.pdf'),
+    ('INT2201', 'Slide Quy trình phát triển phần mềm Agile/Scrum và CI/CD', 'SLIDE', '/materials/INT2201/slides.pdf'),
+    ('INT2201', 'Giáo trình Software Engineering — Pressman', 'TEXTBOOK', '/materials/INT2201/textbook.pdf'),
+    ('INT2203', 'Đề cương chi tiết — An toàn thông tin', 'SYLLABUS', '/materials/INT2203/syllabus.pdf'),
+    ('INT2203', 'Slide Mật mã học đối xứng, bất đối xứng và Chữ ký số', 'SLIDE', '/materials/INT2203/slides.pdf'),
+    ('INT2203', 'Giáo trình An toàn & An ninh thông tin', 'TEXTBOOK', '/materials/INT2203/textbook.pdf'),
+    ('INT2204', 'Đề cương chi tiết — Phát triển ứng dụng Web', 'SYLLABUS', '/materials/INT2204/syllabus.pdf'),
+    ('INT2204', 'Slide Xây dựng RESTful API và Xác thực JWT/OAuth2', 'SLIDE', '/materials/INT2204/slides.pdf'),
+    ('INT2204', 'Ngân hàng bài tập lớn phát triển Web Fullstack', 'EXAM', '/materials/INT2204/exam.pdf'),
+    ('INT3101', 'Đề cương chi tiết — Học máy (Machine Learning)', 'SYLLABUS', '/materials/INT3101/syllabus.pdf'),
+    ('INT3101', 'Slide Hồi quy tuyến tính, Logistic, SVM và Random Forest', 'SLIDE', '/materials/INT3101/slides.pdf'),
+    ('INT3101', 'Giáo trình Machine Learning cơ bản — Vũ Hữu Tiệp', 'TEXTBOOK', '/materials/INT3101/textbook.pdf'),
+    ('INT3104', 'Đề cương chi tiết — Phát triển Web nâng cao (SPA, Next.js)', 'SYLLABUS', '/materials/INT3104/syllabus.pdf'),
+    ('INT3104', 'Slide Server-Side Rendering (SSR), Micro-frontend & Caching', 'SLIDE', '/materials/INT3104/slides.pdf'),
+    ('INT3105', 'Đề cương chi tiết — Điện toán đám mây', 'SYLLABUS', '/materials/INT3105/syllabus.pdf'),
+    ('INT3105', 'Slide Docker Containerization và Kubernetes Orchestration', 'SLIDE', '/materials/INT3105/slides.pdf'),
+    ('INT3105', 'Tài liệu hướng dẫn thực hành AWS Cloud Practitioner', 'TEXTBOOK', '/materials/INT3105/textbook.pdf'),
+    ('INT3201', 'Đề cương chi tiết — Deep Learning', 'SYLLABUS', '/materials/INT3201/syllabus.pdf'),
+    ('INT3201', 'Slide Mạng nơ-ron tích chập (CNN) và Transformer Architecture', 'SLIDE', '/materials/INT3201/slides.pdf'),
+    ('INT3201', 'Giáo trình Deep Learning — Ian Goodfellow', 'TEXTBOOK', '/materials/INT3201/textbook.pdf'),
+    ('INT3202', 'Quy định và Hướng dẫn thực hiện Đồ án chuyên ngành CNTT', 'SYLLABUS', '/materials/INT3202/syllabus.pdf'),
+    ('INT3202', 'Biểu mẫu đề cương, báo cáo tiến độ và tiêu chí chấm điểm', 'SLIDE', '/materials/INT3202/slides.pdf'),
+    ('INT4101', 'Quy định thực tập tốt nghiệp và hướng dẫn liên hệ doanh nghiệp', 'SYLLABUS', '/materials/INT4101/syllabus.pdf'),
+    ('INT4101', 'Mẫu nhật ký thực tập và phiếu đánh giá của doanh nghiệp', 'SLIDE', '/materials/INT4101/slides.pdf'),
+    ('INT4201', 'Quy chế xét điều kiện làm Khóa luận tốt nghiệp và hướng dẫn bảo vệ', 'SYLLABUS', '/materials/INT4201/syllabus.pdf'),
+    ('INT4201', 'Mẫu template LaTeX / Word chuẩn luận văn tốt nghiệp Khoa CNTT', 'TEXTBOOK', '/materials/INT4201/textbook.pdf')
+) AS m (course_code, title, material_type, file_url)
+JOIN courses c ON c.course_code = m.course_code
+ON CONFLICT DO NOTHING;
+

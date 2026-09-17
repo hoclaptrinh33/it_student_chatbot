@@ -79,3 +79,14 @@ class LearningMaterialRepository(BaseRepository):
                 setattr(row, key, value)
         await self.session.flush()
         return self.serialize_row(row)
+
+    async def delete_material(self, material_id: str) -> bool:
+        uid = self.parse_id(material_id)
+        if not uid:
+            return False
+        row = await self.session.get(LearningMaterial, uid)
+        if not row:
+            return False
+        await self.session.delete(row)
+        await self.session.flush()
+        return True

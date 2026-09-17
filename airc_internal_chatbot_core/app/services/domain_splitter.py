@@ -76,6 +76,8 @@ class BaseSplitter:
                     next_start -= 1
                 if text[next_start] in (' ', '\n'):
                     next_start += 1
+            if next_start <= start:
+                next_start = break_point if break_point > start else (start + chunk_size)
             start = next_start
         return chunks
 
@@ -153,11 +155,22 @@ class BaseSplitter:
                 parts = [
                     p.strip()
                     for p in self._split_recursive(
-                        seg, ["\n\n", ". ", "; ", "? ", "! "], max_size
+                        seg, ["\n\n", "\n", ". ", "; ", "? ", "! ", " "], max_size
                     )
                     if p.strip()
                 ]
-                packed.extend(self._pack_segments(parts, target_size, max_size))
+                if len(parts) <= 1 or any(len(p) > max_size for p in parts):
+                    parts = self._force_split(seg, chunk_size=target_size, overlap=50)
+                safe_parts = []
+                for p in parts:
+                    if len(p) > max_size:
+                        for i in range(0, len(p), max_size):
+                            sub = p[i:i + max_size].strip()
+                            if sub:
+                                safe_parts.append(sub)
+                    elif p.strip():
+                        safe_parts.append(p.strip())
+                packed.extend(safe_parts)
                 continue
 
             extra = len(seg) + (2 if current else 0)

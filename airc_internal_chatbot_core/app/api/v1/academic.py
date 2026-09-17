@@ -166,3 +166,14 @@ async def update_material(
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
     return material
+
+
+@router.delete("/materials/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_material(
+    material_id: str,
+    current_user: User = Depends(materials_manage),
+    material_service: LearningMaterialService = Depends(get_learning_material_service),
+):
+    deleted = await material_service.delete_material(material_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Material not found")

@@ -65,8 +65,39 @@ class UserRepository(BaseRepository):
         return self.serialize_row(user)
 
     async def get_by_email(self, email: str) -> Optional[dict]:
-        result = await self.session.execute(select(User).where(User.email == email))
-        return self.serialize_row(result.scalar_one_or_none())
+        clean = (email or "").strip()
+        if not clean:
+            return None
+        if clean.lower().endswith("@fit.edu.vn"):
+            clean = clean[:-11] + "@eau.edu.vn"
+
+        # 1. Exact / case-insensitive email match
+        result = await self.session.execute(
+            select(User).where(func.lower(User.email) == clean.lower())
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            return self.serialize_row(user)
+
+        # 2. Student code match (e.g. SV001, SVWEB, SVAI, SVNEW, 20240101, etc.)
+        result = await self.session.execute(
+            select(User).where(func.lower(User.student_code) == clean.lower())
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            return self.serialize_row(user)
+
+        # 3. Username match with @eau.edu.vn (e.g. 'admin', 'gv01', 'sv01')
+        if "@" not in clean:
+            candidate = f"{clean.lower()}@eau.edu.vn"
+            result = await self.session.execute(
+                select(User).where(func.lower(User.email) == candidate)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                return self.serialize_row(user)
+
+        return None
 
     async def email_exists(self, email: str) -> bool:
         result = await self.session.execute(

@@ -193,9 +193,9 @@ async def view_file_content(
     """
     Xem/Download nội dung file
     """
-    file_doc = await file_repo.get_by_id(file_id)
+    file_doc = await file_repo.get_by_id_or_name(file_id)
     if not file_doc:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail=f"File '{file_id}' not found")
     
     file_path = file_doc.get("path")
     

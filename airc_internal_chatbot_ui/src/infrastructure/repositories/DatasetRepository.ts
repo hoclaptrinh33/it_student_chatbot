@@ -67,4 +67,9 @@ export const datasetRepository: IDatasetRepository = {
         const response = await coreClient.get(`/datasets/${datasetId}/files/${datasetFileId}/chunks`);
         return response.data;
     },
+
+    async retryDataset(datasetId: string): Promise<any> {
+        const response = await coreClient.post(`/datasets/${datasetId}/retry`);
+        return response.data;
+    },
 };

@@ -90,6 +90,24 @@ export const MATERIAL_TYPE_LABELS: Record<string, string> = {
     EXAM: 'Đề thi',
 };
 
+export interface CreateMaterialPayload {
+    course_id: string;
+    title: string;
+    material_type: MaterialType | string;
+    file_url?: string | null;
+    file_id?: string | null;
+    dataset_id?: string | null;
+}
+
+export interface UpdateMaterialPayload {
+    title?: string;
+    course_id?: string;
+    material_type?: MaterialType | string;
+    file_url?: string | null;
+    file_id?: string | null;
+    dataset_id?: string | null;
+}
+
 const academicService = {
     getMyTranscript: async (): Promise<Transcript> => {
         const response = await coreClient.get<Transcript>('/academic/me/transcript');
@@ -142,6 +160,20 @@ const academicService = {
     }): Promise<LearningMaterial[]> => {
         const response = await coreClient.get<LearningMaterial[]>('/academic/materials', { params });
         return response.data;
+    },
+
+    bindMaterial: async (payload: CreateMaterialPayload): Promise<LearningMaterial> => {
+        const response = await coreClient.post<LearningMaterial>('/academic/materials', payload);
+        return response.data;
+    },
+
+    updateMaterial: async (materialId: string, payload: UpdateMaterialPayload): Promise<LearningMaterial> => {
+        const response = await coreClient.patch<LearningMaterial>(`/academic/materials/${materialId}`, payload);
+        return response.data;
+    },
+
+    deleteMaterial: async (materialId: string): Promise<void> => {
+        await coreClient.delete(`/academic/materials/${materialId}`);
     },
 };
 

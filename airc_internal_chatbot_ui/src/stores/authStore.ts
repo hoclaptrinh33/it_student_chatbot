@@ -75,8 +75,21 @@ const useAuthStore = create<AuthState>()(
                     // Component se tu hien thi notification
                 } catch (error: unknown) {
                     console.error('[AuthStore] Login failed:', error);
-                    const err = error as AxiosError<{ detail: string }>;
-                    const errorMsg = err.response?.data?.detail || err.message || 'Đăng nhập thất bại';
+                    const err = error as AxiosError<{ detail: unknown }>;
+                    const detail = err.response?.data?.detail;
+                    let errorMsg = 'Đăng nhập thất bại';
+
+                    if (typeof detail === 'string') {
+                        errorMsg = detail;
+                    } else if (Array.isArray(detail)) {
+                        errorMsg = detail
+                            .map((item: Record<string, unknown>) => (item?.msg as string) || JSON.stringify(item))
+                            .join(', ');
+                    } else if (detail && typeof detail === 'object') {
+                        errorMsg = JSON.stringify(detail);
+                    } else if (err.message) {
+                        errorMsg = err.message;
+                    }
 
                     set({
                         error: errorMsg,

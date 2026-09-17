@@ -18,7 +18,7 @@ from app.repositories.file_repository import FileRepository
 from app.services.embedding_service import embedding_service
 from app.services.vector_service import vector_service
 from app.services.llm_service import llm_service
-from app.services.prompt_service import prompt_service
+from app.services.prompt_service import linkify_material_citations, prompt_service
 from app.services.rerank_service import rerank_service
 from app.services.cache_service import HYBRID_CACHE_TTL_SECONDS, semantic_cache_service
 from app.services.cache_policy import is_cacheable_answer
@@ -41,7 +41,7 @@ def build_cache_suffix(
 ) -> Optional[str]:
     """Cache key suffix. None = skip get/set. HYBRID always includes user_id (P0)."""
     bot = chatbot_id or "none"
-    if intent == ChatIntent.COURSE_ADVICE.value:
+    if intent in (ChatIntent.COURSE_ADVICE.value, ChatIntent.GREETING.value):
         return None
     if intent == ChatIntent.MATERIAL_QA.value:
         return f"_bot_{bot}_course_{course_id or 'none'}"
@@ -183,8 +183,7 @@ class ChatService:
 
         skip_rag = bool(
             classified is not None
-            and classified.intent == ChatIntent.COURSE_ADVICE
-            and facts is not None
+            and classified.intent == ChatIntent.GREETING
         )
         intent_value = classified.intent.value if classified else None
         cache_key_suffix = build_cache_suffix(
@@ -202,6 +201,32 @@ class ChatService:
             else None
         )
         debug_metrics["cache_suffix"] = cache_key_suffix
+
+        if classified is not None and classified.intent == ChatIntent.GREETING:
+            greeting = (
+                "Chào em. Cô là cố vấn học tập Khoa CNTT. "
+                "Em hỏi cô về môn đang học, học lại, lộ trình, hay tài liệu nhé."
+            )
+            assistant_message_id = None
+            if session_id and self.session_repo:
+                saved = await self.session_repo.add_message(
+                    session_id, "assistant", greeting, extra={"intent": "GREETING"}
+                )
+                assistant_message_id = saved.get("id")
+            if stream_callback:
+                await stream_callback(greeting)
+            debug_metrics["total_time_ms"] = round((time.time() - start_total) * 1000, 2)
+            return self._format_response(
+                question,
+                greeting,
+                [],
+                [],
+                cached=False,
+                debug_metrics=debug_metrics,
+                message_id=assistant_message_id,
+                intent=intent_value,
+                empty_transcript=bool(facts.empty_transcript) if facts else False,
+            )
 
         q_embedding = None
         if not skip_rag:
@@ -504,7 +529,41 @@ class ChatService:
             no_context_behavior = cfg.get("no_context_behavior", "reject")
             no_context_custom_msg = cfg.get("no_context_message")
         
-        if total_chunks == 0 and not skip_rag:
+        # Academic advisor: empty RAG is not a hard fail. AIRC no_context reject
+        # only applies when academic facts are disabled (legacy RAG-only bots).
+        if (
+            use_academic
+            and classified is not None
+            and classified.intent == ChatIntent.MATERIAL_QA
+            and total_chunks == 0
+        ):
+            material_reply = self._empty_material_reply(facts, classified)
+            assistant_message_id = None
+            if session_id and self.session_repo:
+                saved = await self.session_repo.add_message(
+                    session_id, "assistant", material_reply, extra={"intent": "MATERIAL_QA"}
+                )
+                assistant_message_id = saved.get("id")
+            if stream_callback:
+                await stream_callback(material_reply)
+            debug_metrics["total_time_ms"] = round((time.time() - start_total) * 1000, 2)
+            return self._format_response(
+                question,
+                material_reply,
+                grouped_results,
+                errors,
+                cached=False,
+                debug_metrics=debug_metrics,
+                message_id=assistant_message_id,
+                intent=intent_value,
+                empty_transcript=bool(facts.empty_transcript) if facts else False,
+            )
+        if total_chunks == 0 and not skip_rag and use_academic:
+            logger.info(
+                "[CHAT] No RAG chunks; continue with AcademicFacts intent=%s",
+                intent_value,
+            )
+        elif total_chunks == 0 and not skip_rag:
             logger.warning(f"[CHAT] No context found - Behavior: {no_context_behavior}")
             debug_metrics["no_context"] = True
             
@@ -626,6 +685,7 @@ class ChatService:
                 base_url=rag_api_base_url,
             )
         debug_metrics["llm_time_ms"] = round((time.time() - start_llm) * 1000, 2)
+        answer = linkify_material_citations(answer, grouped_results)
 
         # 6. Save Cache (suffix includes user_id on HYBRID — P0)
         if (
@@ -869,6 +929,41 @@ class ChatService:
                 "dataset_name": d.get("name"),
                 "results": []
             })
+
+    @staticmethod
+    def _empty_material_reply(facts, classified) -> str:
+        """No PDF in dataset: name the course from catalog/facts, never invent filenames."""
+        codes = []
+        if facts is not None:
+            codes = list(facts.mentioned_course_codes or [])
+        if classified is not None and not codes:
+            codes = list(classified.course_codes or [])
+        labels = []
+        rows = []
+        if facts is not None:
+            rows.extend(facts.records or [])
+            rows.extend(facts.eligible_courses or [])
+            rows.extend(facts.in_progress or [])
+        name_by_code = {}
+        for row in rows:
+            code = (row.get("course_code") or "").upper()
+            name = row.get("course_name") or row.get("name") or ""
+            if code and code not in name_by_code:
+                name_by_code[code] = name
+        for code in codes:
+            name = name_by_code.get(code.upper(), "")
+            labels.append(f"{code} {name}".strip() if name else code)
+        if labels:
+            joined = ", ".join(labels)
+            return (
+                f"Em ơi, cô chưa thấy đề cương hay slide của môn {joined} trong kho tài liệu. "
+                "Em mở tab Tài liệu xem giúp cô; nếu trống thì nhờ thầy cô phụ trách môn "
+                "upload đề cương hoặc slide và gắn đúng mã môn nhé."
+            )
+        return (
+            "Em ơi, cô chưa thấy file tài liệu của môn em hỏi trong kho. "
+            "Em xem tab Tài liệu, hoặc nhờ giảng viên upload và gắn mã môn giúp cô."
+        )
 
     def _apply_reranking(
         self, 

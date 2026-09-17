@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
 
     # LLM Provider Configuration (OpenAI-compatible / Local or Cloud)
-    llm_api_base_url: str = "http://localhost:11434/v1"
-    llm_model_name: str = "gemma-4-26b-qat"
-    llm_api_key: Optional[str] = "ollama"
+    llm_api_base_url: str = "http://host.docker.internal:8080/v1"
+    llm_model_name: str = "gemma-4-e2b-it"
+    llm_api_key: Optional[str] = None
 
     # Qdrant Vector DB
     qdrant_url: str = "http://qdrant:6333"

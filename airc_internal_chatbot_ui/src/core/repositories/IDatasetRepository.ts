@@ -18,4 +18,5 @@ export interface IDatasetRepository {
     deleteDatasetFile(datasetId: string, fileId: string): Promise<void>;
     toggleDatasetFile(datasetId: string, fileId: string, isEnabled: boolean): Promise<boolean>;
     getChunks(datasetId: string, datasetFileId: string): Promise<any[]>;
+    retryDataset(datasetId: string): Promise<any>;
 }

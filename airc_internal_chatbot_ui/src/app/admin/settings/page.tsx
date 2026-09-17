@@ -259,14 +259,15 @@ export default function SystemSettingsPage() {
                                             <span>Giọng đọc Live</span>
                                         </Space>
                                     }
-                                    extra="Giọng Edge-TTS dùng khi bot đọc câu trả lời. Prefetch câu kế để tránh ngắt giữa chừng."
+                                    extra="Chọn Trình duyệt để đọc trực tiếp trên client (không độ trễ) hoặc Edge-TTS để có ngữ điệu tự nhiên."
                                     rules={[{ required: true, message: 'Chọn giọng đọc' }]}
                                 >
                                     <Select
                                         size="large"
                                         options={[
-                                            { value: 'vi-VN-HoaiMyNeural', label: 'Hoài My (nữ)' },
-                                            { value: 'vi-VN-NamMinhNeural', label: 'Nam Minh (nam)' },
+                                            { value: 'browser', label: '⚡ Trình duyệt (Web Speech API - Không delay)' },
+                                            { value: 'vi-VN-HoaiMyNeural', label: 'Hoài My (nữ - Edge-TTS)' },
+                                            { value: 'vi-VN-NamMinhNeural', label: 'Nam Minh (nam - Edge-TTS)' },
                                         ]}
                                     />
                                 </Form.Item>

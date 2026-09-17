@@ -138,13 +138,20 @@ async def login(
             headers={"Retry-After": str(block_seconds)}
         )
     
-    # Validate email format
-    is_valid, email_error = InputValidator.validate_email(credentials.email)
-    if not is_valid:
+    # Validate email or student_code/username format
+    identifier = (credentials.email or "").strip()
+    if not identifier:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=email_error or "Email không hợp lệ"
+            detail="Vui lòng nhập Email hoặc Mã sinh viên / Tên đăng nhập"
         )
+    if "@" in identifier and not identifier.lower().endswith("@fit.edu.vn"):
+        is_valid, email_error = InputValidator.validate_email(identifier)
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=email_error or "Email không hợp lệ"
+            )
     
     try:
         token = await auth_service.login(credentials.email, credentials.password)

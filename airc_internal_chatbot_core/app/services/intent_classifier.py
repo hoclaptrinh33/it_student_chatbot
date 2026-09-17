@@ -17,12 +17,14 @@ class ChatIntent(str, Enum):
     COURSE_ADVICE = "COURSE_ADVICE"
     MATERIAL_QA = "MATERIAL_QA"
     HYBRID = "HYBRID"
+    GREETING = "GREETING"
 
 
 def fold_vi(text: str) -> str:
-    """Lowercase and strip combining marks so 'quyết' matches 'quyet'."""
+    """Lowercase and strip combining marks so 'quyết'/'đề' match 'quyet'/'de'."""
     normalized = unicodedata.normalize("NFD", text or "")
-    return "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn").lower()
+    folded = "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn").lower()
+    return folded.replace("đ", "d")
 
 
 # Patterns are matched against fold_vi(question).
@@ -44,6 +46,17 @@ COURSE_PATTERNS = [
     r"huong\s*(web|ai|security|data|mang)",
     r"career",
     r"chuyen nganh",
+    r"tinh hinh",
+    r"hoc tap",
+    r"bang diem",
+    r"diem so",
+    r"ket qua",
+    r"hoc luc",
+    r"hoc vu",
+    r"dang hoc",
+    r"mon dang",
+    r"\bgpa\b",
+    r"transcript",
 ]
 MATERIAL_PATTERNS = [
     r"slide",
@@ -68,6 +81,10 @@ TRACK_HINTS = {
 }
 
 COURSE_CODE_RE = re.compile(r"INT\d{4}", re.IGNORECASE)
+GREETING_PATTERNS = [
+    r"^(em\s+)?(xin\s*)?chao(\s+\w+){0,4}[\s!.,?]*$",
+    r"^(hello|hi|hey|alo)([\s!.,?]|$)",
+]
 
 
 @dataclass
@@ -87,14 +104,18 @@ class IntentClassifier:
         q = fold_vi(question or "")
         matched_course = any(re.search(pattern, q, re.I) for pattern in COURSE_PATTERNS)
         matched_material = any(re.search(pattern, q, re.I) for pattern in MATERIAL_PATTERNS)
+        is_greeting = any(re.search(pattern, q.strip(), re.I) for pattern in GREETING_PATTERNS)
         if matched_course and matched_material:
             intent = ChatIntent.HYBRID
         elif matched_course:
             intent = ChatIntent.COURSE_ADVICE
         elif matched_material:
             intent = ChatIntent.MATERIAL_QA
+        elif is_greeting:
+            intent = ChatIntent.GREETING
         else:
-            intent = ChatIntent.HYBRID
+            # Advisor-first: unmatched questions use AcademicFacts, not RAG-reject.
+            intent = ChatIntent.COURSE_ADVICE
         return ClassifiedIntent(
             intent=intent,
             career_track=self._detect_track(q),

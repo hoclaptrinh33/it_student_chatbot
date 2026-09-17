@@ -95,6 +95,13 @@ const datasetService = {
      */
     getChunks: async (datasetId: string, datasetFileId: string): Promise<Record<string, unknown>[]> => {
         return await datasetRepository.getChunks(datasetId, datasetFileId);
+    },
+
+    /**
+     * Chạy lại các file lỗi/pending trong dataset
+     */
+    retryDataset: async (datasetId: string): Promise<any> => {
+        return await datasetRepository.retryDataset(datasetId);
     }
 };
 

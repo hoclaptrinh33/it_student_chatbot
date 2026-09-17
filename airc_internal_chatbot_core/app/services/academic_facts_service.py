@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
-from app.services.intent_classifier import ClassifiedIntent, IntentClassifier
+from app.services.intent_classifier import ClassifiedIntent, IntentClassifier, fold_vi
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,42 @@ def _grade_text(row: dict) -> Optional[str]:
         return f"{float(grade):.2f}"
     except (TypeError, ValueError):
         return str(grade)
+
+
+def codes_from_catalog(
+    question: str,
+    catalog: Sequence[dict],
+    already: Optional[Sequence[str]] = None,
+) -> List[str]:
+    """Resolve INT#### and course-name mentions from the catalog. No per-question regex."""
+    codes = [str(c).upper() for c in (already or []) if c]
+    q = fold_vi(question or "")
+    if not q:
+        return codes
+    hits: List[tuple[int, str]] = []
+    for row in catalog:
+        code = str(row.get("course_code") or "").upper()
+        name = fold_vi(str(row.get("course_name") or ""))
+        if not code:
+            continue
+        if re.search(rf"\b{re.escape(code.lower())}\b", q) and code not in codes:
+            hits.append((1000 + len(code), code))
+        elif name and len(name) >= 8 and name in q and code not in codes:
+            hits.append((len(name), code))
+    hits.sort(reverse=True)
+    for _, code in hits:
+        if code not in codes:
+            codes.append(code)
+    return codes
+
+
+def _relation_vi(relation_type: Optional[str]) -> str:
+    kind = (relation_type or "PREREQUISITE").upper()
+    return {
+        "PREREQUISITE": "môn tiên quyết bắt buộc",
+        "PREVIOUS": "môn nên học trước",
+        "CO_REQUISITE": "môn học song hành",
+    }.get(kind, "môn tiên quyết bắt buộc")
 
 
 def _course_label(row: dict) -> str:
@@ -139,12 +175,14 @@ class AcademicFacts:
         if self.current_semester_source == "UNKNOWN" or not self.current_semester:
             lines.append("Học kỳ hiện tại: (không xác định — không đoán)")
         else:
-            lines.append(
-                f"Học kỳ hiện tại: {self.current_semester} (nguồn: {self.current_semester_source})"
-            )
+            source_vi = {
+                "IN_PROGRESS": "đang học",
+                "INFERRED_NEXT": "suy ra từ kỳ trước",
+            }.get(self.current_semester_source, "đã ghi")
+            lines.append(f"Học kỳ hiện tại: {self.current_semester} ({source_vi})")
 
         if self.empty_transcript:
-            lines.append("Bảng điểm: trống (chưa được nhập). Không suy ra môn đã PASSED.")
+            lines.append("Bảng điểm: trống (chưa được nhập). Không suy ra môn đã đạt.")
             if self.career_track_filter:
                 lines.append(f"Lọc định hướng: {self.career_track_filter}")
             return "\n".join(lines)
@@ -156,9 +194,9 @@ class AcademicFacts:
 
         passed = [row for row in self.records if row.get("status") == "PASSED"]
         if passed:
-            lines.append("Đã PASSED: " + "; ".join(_course_label(row) for row in passed))
+            lines.append("Đã đạt: " + "; ".join(_course_label(row) for row in passed))
         else:
-            lines.append("Đã PASSED: (không có)")
+            lines.append("Đã đạt: (không có)")
 
         if self.retake:
             parts = []
@@ -171,9 +209,9 @@ class AcademicFacts:
                     extra.append(str(row["semester_taken"]))
                 suffix = f" ({', '.join(extra)})" if extra else ""
                 parts.append(_course_label(row) + suffix)
-            lines.append("FAILED cần học lại: " + "; ".join(parts))
+            lines.append("Chưa đạt, cần học lại: " + "; ".join(parts))
         else:
-            lines.append("FAILED cần học lại: (không có)")
+            lines.append("Chưa đạt, cần học lại: (không có)")
 
         if self.eligible_courses:
             parts = []
@@ -184,7 +222,7 @@ class AcademicFacts:
                     notes.append("học lại")
                 previous = row.get("recommended_previous") or []
                 if previous:
-                    notes.append("PREVIOUS chưa đạt: " + ", ".join(previous))
+                    notes.append("nên học trước nhưng chưa đạt: " + ", ".join(previous))
                 if notes:
                     credits = _credits(row)
                     core = row.get("course_code") or ""
@@ -226,7 +264,7 @@ class AcademicFacts:
             for row in self.mentioned_prereqs:
                 code = row.get("course_code") or ""
                 grouped.setdefault(code, []).append(
-                    f"{row.get('prerequisite_code')} ({row.get('relation_type')}, depth {row.get('depth')})"
+                    f"{row.get('prerequisite_code')} ({_relation_vi(row.get('relation_type'))}, bậc {row.get('depth')})"
                 )
             for code, items in grouped.items():
                 lines.append(f"Tiên quyết của {code}: " + "; ".join(items))
@@ -272,8 +310,8 @@ class AcademicFacts:
     @staticmethod
     def _blocked_label(row: dict) -> str:
         missing = ", ".join(row.get("missing_prereq_codes") or [])
-        rel = row.get("relation_type") or "PREREQUISITE"
-        reason = f"{rel} thiếu PASSED: {missing}" if missing else f"{rel} thiếu PASSED"
+        rel = _relation_vi(row.get("relation_type"))
+        reason = f"chưa đạt {rel}: {missing}" if missing else f"chưa đạt {rel}"
         return f"{_course_label(row)}, {reason}"
 
 
@@ -293,10 +331,11 @@ class AcademicFactsService:
         classified = classified or self._classifier.classify(question)
         user = await self.record_repo.get_user(user_id)
         if not user:
+            mentioned = await self._mentioned_codes(question, classified)
             return AcademicFacts.empty(
                 user_id,
                 career_track=classified.career_track,
-                mentioned_course_codes=list(classified.course_codes),
+                mentioned_course_codes=mentioned,
             )
 
         records = await self.record_repo.list_by_user(user_id)
@@ -311,7 +350,8 @@ class AcademicFactsService:
                 career_track=classified.career_track,
                 mentioned_course_codes=list(classified.course_codes),
             )
-            facts.mentioned_prereqs = await self._closures(classified.course_codes)
+            facts.mentioned_course_codes = await self._mentioned_codes(question, classified)
+            facts.mentioned_prereqs = await self._closures(facts.mentioned_course_codes)
             return facts
 
         current_semester, source = infer_current_semester(records)
@@ -322,7 +362,7 @@ class AcademicFactsService:
         if self.prerequisite_repo:
             blocked = await self.prerequisite_repo.list_blocked(user_id, limit=30)
 
-        mentioned = list(classified.course_codes)
+        mentioned = await self._mentioned_codes(question, classified)
         closures = await self._closures(mentioned)
 
         logger.info(
@@ -349,6 +389,17 @@ class AcademicFactsService:
             in_progress=in_progress,
             retake=retake,
         )
+
+    async def _mentioned_codes(self, question: str, classified: ClassifiedIntent) -> List[str]:
+        already = list(classified.course_codes)
+        if not self.course_repo:
+            return already
+        try:
+            catalog = await self.course_repo.list_courses()
+        except Exception as exc:
+            logger.info("[FACTS] catalog lookup skipped: %s", exc)
+            return already
+        return codes_from_catalog(question, catalog, already)
 
     async def _closures(self, course_codes: Sequence[str]) -> List[dict]:
         if not course_codes or not self.prerequisite_repo:

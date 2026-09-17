@@ -114,7 +114,7 @@ services:
       - JWT_ALGORITHM=HS256
       - DEBUG=True
       - CUDA_VISIBLE_DEVICES=-1
-      - HF_HOME=/app/models_cache
+      - HF_HOME=/tmp/hf_home
       - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
     volumes:
       - core_uploads:/app/uploads
@@ -131,6 +131,8 @@ services:
         condition: service_started
     networks:
       - it_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test:
         [
@@ -162,7 +164,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
       - CUDA_VISIBLE_DEVICES=-1
-      - HF_HOME=/app/models_cache
+      - HF_HOME=/tmp/hf_home
       - EASYOCR_MODULE_PATH=/app/models_cache/easyocr
     volumes:
       - core_uploads:/app/uploads
@@ -179,6 +181,8 @@ services:
         condition: service_started
     networks:
       - it_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # 7. UI Service
   ui_service:

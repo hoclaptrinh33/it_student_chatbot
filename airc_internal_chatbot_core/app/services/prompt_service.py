@@ -2,21 +2,34 @@
 Prompt Service - Xây dựng prompts cho RAG
 Service này chịu trách nhiệm ghép nối câu hỏi, lịch sử chat và context thành một prompt hoàn chỉnh cho LLM.
 """
+import re
 from typing import List, Dict, Any, Optional
 
 ADVISOR_BAN_HALLUCINATION = (
-    "Bạn là Trợ lý Cố vấn Học tập & Tài liệu Khoa CNTT.\n"
-    "QUY TẮC BẮT BUỘC:\n"
-    "1. Mã môn, số tín chỉ, tiên quyết, trạng thái PASSED/FAILED/IN_PROGRESS\n"
-    "   CHỈ được lấy từ [AcademicFacts]. CẤM bịa hoặc dùng kiến thức chung.\n"
-    "2. Nếu sinh viên nói đã qua một môn nhưng [AcademicFacts] không có PASSED\n"
-    "   → tin bảng điểm, giải thích nhẹ nhàng, không tranh cãi.\n"
-    "3. Tài liệu (slide/đề cương/giáo trình/đề) lấy từ [Knowledge] và PHẢI cite file.\n"
-    "4. [AcademicFacts].empty_transcript = true → nói bảng điểm chưa được nhập,\n"
-    "   không gợi ý như thể sinh viên đã hoàn thành HK bất kỳ.\n"
-    "5. current_semester_source = UNKNOWN → không đoán học kỳ.\n"
-    "6. Phân biệt PREREQUISITE (bắt buộc PASSED) và PREVIOUS (khuyến nghị).\n"
-    "7. Trả lời tiếng Việt, súc tích, liệt kê mã môn + tên + lý do."
+    "Em đang nói chuyện với cô — giảng viên cố vấn học tập Khoa CNTT.\n"
+    "Giọng văn: tự nhiên như cô đang ngồi trao đổi với em, xưng “cô”, gọi người hỏi là “em”. "
+    "Viết thành đoạn văn ngắn, có lúc một vài ý gạch đầu dòng khi thật sự cần. "
+    "Không nói như báo cáo hệ thống, không mở đầu bằng “Dựa trên dữ liệu”, "
+    "không chép nguyên khối bảng điểm.\n"
+    "\n"
+    "CẤM xuất hiện trong câu trả lời (kể cả trong ngoặc): "
+    "[AcademicFacts], [Knowledge], PASSED, FAILED, IN_PROGRESS, PREREQUISITE, PREVIOUS, "
+    "depth, career_track, empty_transcript, TC viết kèm tiếng Anh. "
+    "Dùng tiếng Việt: đã đạt / chưa đạt (cần học lại) / đang học / "
+    "môn tiên quyết bắt buộc / môn nên học trước.\n"
+    "\n"
+    "QUY TẮC ĐÚNG SỰ THẬT (cô đọc khối [AcademicFacts] thầm, không đọc tên khối):\n"
+    "1. Mã môn, số tín chỉ, tiên quyết, đã đạt/chưa đạt/đang học — chỉ lấy từ [AcademicFacts]. Không bịa.\n"
+    "2. Em nói đã qua một môn nhưng bảng điểm chưa ghi đã đạt → tin bảng điểm, giải thích nhẹ, không cãi.\n"
+    "3. Đang học không được coi là đã đạt. Không khuyên đăng ký môn còn thiếu tiên quyết bắt buộc.\n"
+    "4. Bảng điểm trống → nói chưa có bảng điểm, không suy ra em đã xong học kỳ nào.\n"
+    "5. Không đoán học kỳ nếu khối ghi không xác định.\n"
+    "6. Chỉ bàn môn liên quan câu hỏi. Không liệt kê hết môn bị chặn.\n"
+    "7. Tài liệu: chỉ nói file có trong [Knowledge]. Mỗi file nhắc tới PHẢI là markdown link "
+    "[tên dễ đọc](/files/<file_id>/view) với đúng file_id trong Knowledge. "
+    "Không viết [tên.pdf] trơn, không bịa URL ngoài.\n"
+    "8. Knowledge trống: không bịa slide/đề cương. Bảo em xem tab Tài liệu hoặc nhờ giảng viên upload.\n"
+    "9. Câu không liên quan học tập Khoa CNTT: từ chối ngắn, vẫn giọng cô nói với em."
 )
 
 
@@ -190,9 +203,20 @@ class PromptService:
                 file_name = r.get("file_name", "Unknown File")
                 chunks_by_file[file_name].append(text)
             
+            file_ids_by_name = {}
+            for r in results:
+                fname = (r.get("file_name") or "").strip()
+                fid = str(r.get("file_id") or "").strip()
+                if fname and fid and fname not in file_ids_by_name:
+                    file_ids_by_name[fname] = fid
+
             # Render chunks grouped by file
             for file_name, texts in chunks_by_file.items():
+                file_id = file_ids_by_name.get(file_name) or ""
                 lines.append(f"\n  [File: {file_name}]")
+                if file_id:
+                    lines.append(f"  file_id: {file_id}")
+                    lines.append(f"  cite_markdown: [{file_name}](/files/{file_id}/view)")
                 for text in texts:
                     lines.append(f"  - {text}")
         
@@ -256,6 +280,75 @@ YÊU CẦU:
 2. Tập trung vào các thực thể, câu hỏi chính, câu trả lời đã chốt hoặc các quyết định kỹ thuật quan trọng.
 3. Viết súc tích, ngắn gọn, lược bỏ các lời chào hỏi xã giao.
 """
+
+
+def clean_internal_tokens(answer: str) -> str:
+    """Loại bỏ các token nội bộ hệ thống nếu LLM vô tình lặp lại."""
+    if not answer:
+        return answer
+    out = answer
+    out = re.sub(r'\[AcademicFacts\]', 'dữ liệu học vụ', out, flags=re.IGNORECASE)
+    out = re.sub(r'\[Knowledge\]', 'tài liệu học tập', out, flags=re.IGNORECASE)
+    out = re.sub(r'\bAcademicFacts\b', 'dữ liệu học vụ', out, flags=re.IGNORECASE)
+    return out
+
+
+def linkify_material_citations(answer: str, grouped_results: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Turn bare PDF names into markdown links the UI can open in a new tab, strip hallucinatory links."""
+    if not answer:
+        return answer
+
+    out = clean_internal_tokens(answer)
+
+    mapping: Dict[str, tuple[str, str]] = {}
+    valid_keys: set[str] = set()
+    for group in grouped_results or []:
+        for row in group.get("results") or []:
+            file_id = str(row.get("file_id") or "").strip()
+            file_name = (row.get("file_name") or "").strip()
+            if file_id and file_name:
+                mapping[file_name.lower()] = (file_name, file_id)
+                valid_keys.add(file_id.lower())
+                valid_keys.add(file_name.lower())
+
+    # 1. Linkify valid files from knowledge
+    for _, (file_name, file_id) in sorted(mapping.items(), key=lambda item: -len(item[0])):
+        href = f"/files/{file_id}/view"
+        md = f"[{file_name}]({href})"
+        escaped = re.escape(file_name)
+        out = re.sub(
+            rf"\[{escaped}\]\((?!/files/{re.escape(file_id)}/view)[^)]*\)",
+            md,
+            out,
+            flags=re.IGNORECASE,
+        )
+        out = re.sub(
+            rf"(?<!\()\[{escaped}\](?!\()",
+            md,
+            out,
+            flags=re.IGNORECASE,
+        )
+        out = re.sub(
+            rf"(?<!\[)(?<!\]\(){escaped}(?!\))",
+            md,
+            out,
+            flags=re.IGNORECASE,
+        )
+
+    # 2. Xóa bỏ các link markdown tới file ảo giác không có trong dữ liệu (tránh click vào lỗi 404)
+    def strip_fake_file_link(match: re.Match) -> str:
+        label = match.group(1).strip()
+        url = match.group(2).strip()
+        files_match = re.match(r'^/files/([^/]+)/view$', url, re.IGNORECASE)
+        if files_match:
+            fid = files_match.group(1).strip().lower()
+            if fid not in valid_keys and label.lower() not in mapping:
+                return f"**{label}**"
+        return match.group(0)
+
+    out = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', strip_fake_file_link, out)
+
+    return out
 
 
 # Singleton instance toàn cục

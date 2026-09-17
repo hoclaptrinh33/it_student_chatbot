@@ -20,6 +20,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for (var r of registrations) {
+                    r.unregister();
+                  }
+                });
+              }
+            `,
+          }}
+        />
         <AntdRegistry>
           <ConfigProvider theme={theme}>
             {children}

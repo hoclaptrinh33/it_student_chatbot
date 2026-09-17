@@ -4,7 +4,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.services.academic_facts_service import AcademicFactsService, infer_current_semester
+from app.services.academic_facts_service import (
+    AcademicFactsService,
+    codes_from_catalog,
+    infer_current_semester,
+)
 from app.services.intent_classifier import IntentClassifier
 
 SV001 = "cccccccc-cccc-cccc-cccc-cccccccccccc"
@@ -96,8 +100,8 @@ async def test_utterance_passed_int1203_still_failed_from_records():
     assert any(row["course_code"] == "INT1203" for row in facts.retake)
     prompt = facts.render_text()
     assert "INT1203" in prompt
-    assert "FAILED cần học lại" in prompt
-    passed_line = next(line for line in prompt.splitlines() if line.startswith("Đã PASSED:"))
+    assert "Chưa đạt, cần học lại" in prompt
+    passed_line = next(line for line in prompt.splitlines() if line.startswith("Đã đạt:"))
     assert "INT1203" not in passed_line
 
 
@@ -161,3 +165,15 @@ async def test_sv001_web_facts_live_postgres():
     blocked = next(row for row in facts.blocked_sample if row["course_code"] == "INT2204")
     assert "INT2104" in (blocked.get("missing_prereq_codes") or [])
     assert facts.career_track_filter == "WEB"
+
+
+def test_codes_from_catalog_matches_vietnamese_course_name():
+    catalog = [
+        {"course_code": "INT1201", "course_name": "Cấu trúc dữ liệu và giải thuật"},
+        {"course_code": "INT2104", "course_name": "Lập trình Web"},
+    ]
+    codes = codes_from_catalog(
+        "Tìm cho t tài liệu của môn cấu trúc dữ liệu và giải thuật",
+        catalog,
+    )
+    assert codes == ["INT1201"]

@@ -143,3 +143,8 @@ build_plain_pdf.py
 /package.json
 /package-lock.json
 
+# Ignored folders per user requirements
+/document/
+/Report/dump_*.txt
+Report/dump_*.txt
+

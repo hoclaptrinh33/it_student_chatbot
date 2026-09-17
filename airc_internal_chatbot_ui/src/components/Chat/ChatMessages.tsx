@@ -96,7 +96,7 @@ export default function ChatMessages({ messages, isTyping }: ChatMessagesProps) 
                                     <p className="m-0 whitespace-pre-wrap">{msg.content}</p>
                                 ) : (
                                     // Bot message: Render Markdown, LaTeX & Mermaid for rich formatting
-                                    <ChatMessageContent content={msg.content} isUser={false} />
+                                    <ChatMessageContent content={msg.content} isUser={false} sources={msg.sources} />
                                 )}
                             </div>
 

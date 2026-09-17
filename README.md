@@ -1,282 +1,179 @@
+# Hệ Thống Hỏi Đáp Ngôn Ngữ Tự Nhiên Hỗ Trợ Chọn Môn Học và Tài Liệu Học Tập Cho Sinh Viên Khoa CNTT
+### IT Student Academic Advisor & Learning Materials Chatbot
 
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14.0+-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC2626)](https://qdrant.tech/)
+[![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-# AIRC Internal Chatbot (Project Master)
-
-Dự án AIRC Internal Chatbot là hệ thống tích hợp RAG (Retrieval-Augmented Generation) để hỗ trợ tra cứu thông tin nội bộ, được chia thành 3 microservices chính.
-
-**🌐 Production Deployment:** https://ragairc.neovort.shop
-
----
-
-## 📚 Quick Links
-
-- **[Complete Deploy Guide](DEPLOY_GUIDE_SIMPLE.md)** - Hướng dẫn deploy lên GKE chi tiết
-- **[Quick Reference](QUICK_REFERENCE.md)** - Lệnh nhanh và troubleshooting
-- **[Original Deploy Guide](DEPLOY_TO_GKE.md)** - Tài liệu deploy đầy đủ (legacy)
-
----
-
-## 🚀 Production Status (GKE)
-
-**Cluster:** rag-gke (2 nodes x e2-standard-4)
-**Domain:** ragairc.neovort.shop
-**Status:** ✅ All services running
-
-| Service | Pods | CPU Usage | RAM Usage | Status     |
-| ------- | ---- | --------- | --------- | ---------- |
-| Core    | 1/1  | 13m       | 2235Mi    | ✅ Running |
-| Auth    | 1/1  | 12m       | 222Mi     | ✅ Running |
-| Worker  | 1/1  | 1m        | 559Mi     | ✅ Running |
-| UI      | 1/1  | 2m        | 38Mi      | ✅ Running |
-| MongoDB | 1/1  | 7m        | 68Mi      | ✅ Running |
-| Redis   | 1/1  | 7m        | 3Mi       | ✅ Running |
-| Qdrant  | 1/1  | 1m        | 14Mi      | ✅ Running |
-
-**Total:** 43m CPU / 3.1GB RAM (Cluster: 8 vCPU / 32GB)
+> **Học phần**: Trí tuệ nhân tạo (Artificial Intelligence)  
+> **Trường**: Đại học Công nghệ Đông Á (EAU) — **Khoa**: Công nghệ Thông tin  
+> **Nhóm thực hiện**: Nhóm 15  
+> **Báo cáo đồ án chính thức**: [`Report/BTL_TTNT_NHOM_15.docx`](Report/BTL_TTNT_NHOM_15.docx)
 
 ---
 
-## 1. Kiến trúc Tổng quan (System Architecture)
+## 📌 1. Giới Thiệu Dự Án
 
-Dự án được triển khai theo mô hình Microservices, được đóng gói và kết nối bằng Docker Compose.
+Trong đào tạo đại học theo học chế tín chỉ, sinh viên ngành Công nghệ Thông tin (CNTT) thường gặp nhiều khó khăn trong việc:
+1. **Nắm bắt chuỗi môn học tiên quyết**: Đồ thị phụ thuộc môn học (Prerequisites) phức tạp, nếu trượt hoặc học sai thứ tự sẽ bị nghẽn tiến độ tốt nghiệp.
+2. **Lựa chọn định hướng chuyên ngành**: Lúng túng giữa các nhánh nghề nghiệp (Kỹ thuật phần mềm / Web, Trí tuệ nhân tạo / Khoa học dữ liệu, An toàn thông tin / Mạng máy tính).
+3. **Tìm kiếm tài liệu học tập chính thống**: Tài liệu bài giảng, đề cương chi tiết (syllabus), đề thi tham khảo bị phân tán.
+4. **Quá tải cố vấn học tập**: Giảng viên không thể phản hồi tức thì 24/7 mọi thắc mắc của hàng nghìn sinh viên.
+
+**Giải pháp**: Hệ thống **Cố vấn học tập AI** ứng dụng kiến trúc **Tạo sinh tăng cường truy xuất (Retrieval-Augmented Generation - RAG)** kết hợp **Lập luận trên Đồ thị tiên quyết (Prerequisite DAG)** và **Bộ nhớ đệm ngữ nghĩa theo người dùng (Per-user Semantic Caching)**.
+
+---
+
+## ✨ 2. Các Tính Năng Nổi Bật
+
+- 🎓 **Tư vấn môn đủ điều kiện thời gian thực**: Tự động đối chiếu bảng điểm cá nhân của sinh viên với cây tiên quyết (Prerequisite Closure) để chỉ ra các môn được phép học, môn bị chặn do thiếu môn tiên quyết hoặc môn cần học lại.
+- 📚 **Tra cứu & Gợi ý tài liệu học tập (PDF)**: Truy xuất chính xác giáo trình, slide bài giảng, đề cương chi tiết từ kho tri thức vector Qdrant, kèm trích nguồn và nút tải tài liệu trực tiếp.
+- 🎯 **Triệt tiêu ảo giác (Zero Hallucination)**: Kỹ thuật tiêm sự thật học vụ (`[AcademicFacts]` Injection) lấy trực tiếp từ CSDL PostgreSQL, cam kết không bịa mã môn học, số tín chỉ hay quy chế đào tạo.
+- ⚡ **Bộ nhớ đệm ngữ nghĩa phân lập (Per-user Semantic Cache)**: Phản hồi dưới **100ms** cho các câu hỏi tương đồng ngữ nghĩa, đồng thời phân tách theo `user_id` để tuyệt đối bảo mật dữ liệu điểm số giữa các sinh viên.
+- 🎙️ **Trợ lý giọng nói tương tác trực tiếp (Live Voice Advisor)**: Hỗ trợ sinh viên giao tiếp 2 chiều bằng giọng nói tiếng Việt với AI qua Web Audio / Speech Synthesis.
+- 👥 **Hệ thống phân quyền đa vai trò (RBAC)**:
+  - **Sinh viên**: Chatbot cố vấn, xem môn đủ điều kiện, tra cứu bảng điểm cá nhân, kho tài liệu học tập, cập nhật hồ sơ.
+  - **Giảng viên**: Dashboard thống kê, tra cứu bảng điểm và môn đủ điều kiện của sinh viên, xem cây điều kiện tiên quyết trực quan, quản lý tài liệu và kho tri thức.
+  - **Quản trị viên**: Quản lý người dùng, vai trò, quyền hạn, quản lý danh mục môn học, nhập bảng điểm, cấu hình tham số RAG Pipeline và LLM provider.
+
+---
+
+## 🏗️ 3. Kiến Trúc Hệ Thống
+
+Hệ thống được xây dựng theo mô hình **Microservices**:
 
 ```
-airc_internal_chatbot_v1/         # ROOT DIRECTORY
-├── docker-compose.yml            # Orchestration Config (Start All)
-├── README.md                     # Master Documentation
-│
-├── airc_internal_chatbot_auth/   # [Service 8001] Authentication & RBAC
-│   ├── app/                      # Source Code
-│   ├── .env.example              # Config Sample
-│   └── Dockerfile                # Build Instruction
-│
-├── airc_internal_chatbot_core/   # [Service 8000] RAG, LLM & File Processing
-│   ├── app/                      # Source Code
-│   ├── .env.example              # Config Sample
-│   └── Dockerfile                # Build Instruction
-│
-└── airc_internal_chatbot_ui/     # [Service 3000] Frontend Interface
-    ├── src/                      # Source Code
-    ├── .env.example              # Config Sample
-    └── Dockerfile                # Build Instruction
+                              ┌───────────────────────────────────┐
+                              │  Client Browser (Next.js 14 UI)   │
+                              │       http://localhost:3000       │
+                              └─────────────────┬─────────────────┘
+                                                │ RESTful API / SSE
+                 ┌──────────────────────────────┴──────────────────────────────┐
+                 ▼                                                             ▼
+  ┌─────────────────────────────┐                               ┌─────────────────────────────┐
+  │      it_auth Service        │                               │       it_core Service       │
+  │     FastAPI (Port 8001)     │                               │     FastAPI (Port 8000)     │
+  │  - JWT Authentication       │                               │  - Hybrid RAG Engine        │
+  │  - RBAC (Admin/Teacher/SV)  │                               │  - Academic Facts Injection │
+  │  - User Management          │                               │  - Prerequisite DAG Engine  │
+  └──────────────┬──────────────┘                               │  - Per-user Semantic Cache  │
+                 │                                              │  - Background Ingest Worker │
+                 │                                              └──────────────┬──────────────┘
+                 │                                                             │
+                 ▼                                                             ▼
+  ┌─────────────────────────────┐                               ┌─────────────────────────────┐
+  │   PostgreSQL 15 Database    │                               │     Qdrant Vector DB        │
+  │  - Users, Roles, Perms      │                               │  - 768-dim Vector Index     │
+  │  - Courses (23 học phần)    │                               │  - Vietnamese-SBERT Embed   │
+  │  - Prerequisite DAG (25)    │                               │  - Chunk Metadata Filtering │
+  │  - Student Academic Records │                               └──────────────┬──────────────┘
+  │  - Learning Materials (PDF) │                                              │
+  └─────────────────────────────┘                               ┌──────────────┴──────────────┐
+                                                                │     Redis Cache & Queue     │
+                                                                │  - Semantic Cache Key Store │
+                                                                │  - Document Ingest Jobs     │
+                                                                └─────────────────────────────┘
 ```
 
 ---
 
-## 2. Hướng dẫn Triển khai (Deployment Guide)
+## 📊 4. Dữ Liệu Học Vụ Mẫu (Seed Data)
 
-### Cách 1: Chạy Monorepo (Khuyên dùng)
+Hệ thống đã nạp sẵn khung chương trình đào tạo chuẩn của Khoa CNTT:
+- **23 môn học**: Từ học kỳ 1 đến học kỳ 6, bao gồm Đại cương, Cơ sở ngành và Chuyên ngành (Web, AI, Mạng máy tính, An toàn thông tin).
+- **25 quan hệ tiên quyết**: Ràng buộc cứng (`PREREQUISITE`), ràng buộc học trước (`PREVIOUS`), ràng buộc song hành (`CO_REQUISITE`).
+- **18+ tài liệu PDF**: Giáo trình, slide và đề cương chi tiết học phần đã chunk và vector hóa vào Qdrant.
 
-Nếu bạn có toàn bộ source code trong thư mục cha `airc_internal_chatbot_v1` như cấu trúc trên.
+### Tài khoản kiểm thử mẫu:
+| Email | Vai trò | Họ và tên / Mô tả | Mật khẩu |
+| :--- | :--- | :--- | :--- |
+| `admin@eau.edu.vn` | Quản trị viên | Quản trị viên Khoa CNTT | `Pass123` |
+| `gv01@eau.edu.vn` | Giảng viên | ThS. Nguyễn Văn An (Cố vấn học tập) | `Pass123` |
+| `sv01@eau.edu.vn` | Sinh viên | Lê Hải Đăng (SV năm 2 - có môn rớt cần học lại) | `Pass123` |
+| `sv_web@eau.edu.vn` | Sinh viên | Trần Thị Mai (SV định hướng Lập trình Web) | `Pass123` |
+| `sv_ai@eau.edu.vn` | Sinh viên | Phạm Văn Bình (SV định hướng Trí tuệ nhân tạo) | `Pass123` |
+| `sv_new@eau.edu.vn` | Sinh viên | Hoàng Gia Bảo (SV năm nhất mới nhập học) | `Pass123` |
 
-1. **Cấu hình Environment:**
+---
 
-   - Vào từng thư mục con (`auth`, `core`, `ui`), copy file `.env.example` thành `.env` (hoặc `.env.local` cho UI).
-   - Cập nhật các secret keys nếu cần.
-2. **Khởi động hệ thống:**
-   Tại thư mục Root, chạy lệnh:
+## 🚀 5. Hướng Dẫn Cài Đặt & Chạy Hệ Thống
 
-   ```bash
-   docker-compose up -d --build
-   ```
+### Yêu cầu tiên quyết:
+- Docker và Docker Compose (hoặc Podman)
+- Node.js 18+ và Python 3.11+ (nếu chạy không qua Docker)
+- API Key Google Gemini (`GEMINI_API_KEY`)
 
-   Volume Postgres mới chạy `init_db.sql`. Volume cũ cần delta RAG + quyền học vụ + persona demo:
-
-   ```bash
-   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/002_align_rag_schema.sql
-   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/003_academic_permissions.sql
-   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/004_enable_academic_facts.sql
-   psql "postgresql://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot" -f migrations/005_seed_demo_personas.sql
-   ```
-
-   `005_seed_demo_personas.sql` thêm SV_WEB / SV_AI / SV_NEW (`Pass123`). Checklist hội đồng: [`document/DEMO_CHECKLIST.md`](document/DEMO_CHECKLIST.md).
-3. **Truy cập:**
-
-   - Frontend: `http://localhost:3000`
-   - Auth API: `http://localhost:8001/docs`
-   - Core API: `http://localhost:8000/docs`
-
-### Cách 2: Chạy từ Source Code Rời rạc (Distributed Repos)
-
-Nếu người dùng tải 3 services từ 3 git repository khác nhau về máy. Để chạy được bằng `docker-compose`, họ cần làm như sau:
-
-**Bước 1: Chuẩn bị Thư mục**
-Tạo một thư mục cha (ví dụ `AIRC_System`) và đặt 3 projects con nằm cùng cấp với nhau:
-
-```
-AIRC_System/
-├── airc_internal_chatbot_auth/   <-- Git Clone Auth
-├── airc_internal_chatbot_core/   <-- Git Clone Core
-├── airc_internal_chatbot_ui/     <-- Git Clone UI
-└── docker-compose.yml            <-- Cần file này!
-```
-
-**Bước 2: Tải file Orchestration**
-Người dùng **BẮT BUỘC** phải có file `docker-compose.yml` đặt ở thư mục cha. File này định nghĩa việc build và kết nối mạng giữa 3 services.
-
-**Bước 3: Chạy lệnh**
-Tại thư mục `AIRC_System`, chạy lệnh tương tự:
-
+### Bước 1: Sao chép dự án và cấu hình môi trường
 ```bash
-docker-compose up -d --build
+git clone https://github.com/hoclaptrinh33/it_student_chatbot.git
+cd it_student_chatbot
+
+# Tạo file .env từ file mẫu
+cp airc_internal_chatbot_core/.env.example airc_internal_chatbot_core/.env
+# Điền khóa GEMINI_API_KEY của bạn vào file .env
 ```
 
----
-
-### Cách 3: Chạy thủ công từng Dockerfile (Dành cho chuyên gia)
-
-**Câu hỏi:** _Nếu tôi chỉ tải 3 source code và chạy `docker build/run` từng cái thì có chạy được không?_
-**Trả lời:** Không chạy ngay được. Bạn sẽ **THIẾU 3 thành phần cốt lõi** mà Docker Compose tự động xử lý giúp bạn:
-
-1. **Docker Network (Mạng nội bộ):**
-
-   - Các container mặc định bị cô lập, không thể gọi nhau bằng tên (ví dụ: Core không thể gọi `http://auth_service` được).
-   - **Giải pháp:** Phải tự tạo mạng: `docker network create airc-network`.
-2. **Infrastructure (Cơ sở hạ tầng):**
-
-   - Docker Compose tự bật MongoDB, Redis, Qdrant. Nếu chạy thủ công, bạn phải tự cài và chạy các services này trước.
-   - **Giải pháp:** Phải tự chạy MongoDB, Redis, Qdrant và join vào network trên.
-3. **Environment Variables (Kết nối):**
-
-   - Bạn phải sửa file `.env` để trỏ đúng IP hoặc Hostname của các container trên (không dùng `localhost` được vì localhost trong container là chính nó).
-
-#### Hướng dẫn chạy thủ công (Manual Workflow):
-
-Nếu bắt buộc phải chạy rời, hãy làm theo thứ tự:
-
-1. **Tạo mạng:**
-
-   ```bash
-   docker network create airc-net
-   ```
-2. **Chạy Database (Bắt buộc):**
-
-   ```bash
-   docker run -d --name mongo --net airc-net mongo:latest
-   docker run -d --name redis --net airc-net redis:alpine
-   docker run -d --name qdrant --net airc-net qdrant/qdrant
-   ```
-3. **Chạy Apps (Kèm env):**
-
-   ```bash
-   # Auth Service
-   docker run -d --name auth_service --net airc-net --env MONGODB_URL="mongodb://mongo:27017" airc-auth-service
-
-   # Core Service
-   docker run -d --name core_service --net airc-net --env AUTH_SERVICE_URL="http://auth_service:8001" airc-core-service
-
-   # UI Service
-   docker run -d -p 3000:3000 --name ui_service --net airc-net airc-ui-service
-   ```
-
----
-
-## 3. Tech Stack
-
-| Service        | Technology       | Port | DB / Components                                              |
-| :------------- | :--------------- | :--- | :----------------------------------------------------------- |
-| **Auth** | Python (FastAPI) | 8001 | MongoDB (Users, Roles)                                       |
-| **Core** | Python (FastAPI) | 8000 | MongoDB (Chat), Qdrant (Vector), Redis (Queue), Gemini (LLM) |
-| **UI**   | Next.js (React)  | 3000 | Zustand, Ant Design, Axios                                   |
-
-## 4. Environment Variables (Tóm tắt)
-
-Để kết nối 3 services, cần đảm bảo config URL trỏ đúng vào nhau:
-
-- **Core Service (`.env`):**
-
-  ```properties
-  AUTH_SERVICE_URL=http://airc_auth_service:8001
-  REDIS_URL=redis://airc_redis:6379/0
-  QDRANT_URL=http://airc_qdrant:6333
-  ```
-
-  _(Lưu ý: Trong Docker, dùng tên service `airc_auth_service` thay vì localhost)_
-- **UI Service (build args hoặc `.env.local`):**
-
-  ```properties
-  NEXT_PUBLIC_AUTH_API=http://localhost:8001/api/auth
-  NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-  NEXT_PUBLIC_APP_URL=http://localhost:3000
-  ```
-
-  _(Lưu ý: UI chạy ở browser client nên vẫn gọi API qua localhost)_
-
----
-
-## 5. API Documentation
-
-### Auth Service (Port 8001)
-
-| Method | Endpoint                  | Description                |
-| ------ | ------------------------- | -------------------------- |
-| POST   | `/api/auth/register`    | Đăng ký user mới       |
-| POST   | `/api/auth/login`       | Đăng nhập               |
-| GET    | `/api/auth/me`          | Thông tin user hiện tại |
-| GET    | `/api/rbac/roles`       | Danh sách roles           |
-| GET    | `/api/rbac/permissions` | Danh sách permissions     |
-| GET    | `/api/rbac/users`       | Danh sách users (Admin)   |
-
-### Core Service (Port 8000)
-
-| Method | Endpoint                          | Description                                |
-| ------ | --------------------------------- | ------------------------------------------ |
-| GET    | `/api/v1/chatbots`              | Danh sách chatbots                        |
-| POST   | `/api/v1/chatbots`              | Tạo chatbot mới                          |
-| GET    | `/api/v1/datasets`              | Danh sách datasets                        |
-| POST   | `/api/v1/datasets`              | Tạo dataset mới                          |
-| POST   | `/api/v1/files/upload`          | Upload file                                |
-| GET    | `/api/v1/files/{id}/view`       | Xem file (PDF/Image inline, DOCX download) |
-| POST   | `/api/v1/chat`                  | Gửi tin nhắn chat                        |
-| GET    | `/api/v1/sessions`              | Lịch sử chat sessions                    |
-| GET    | `/api/v1/stats/dashboard`       | Dashboard statistics                       |
-| GET    | `/api/v1/stats/recent-activity` | Recent activity                            |
-
----
-
-## 6. Roles & Permissions (RBAC)
-
-| Role              | Permissions                                         |
-| ----------------- | --------------------------------------------------- |
-| **admin**   | Full access: users, roles, chatbots, datasets, chat |
-| **teacher** | Manage datasets, view chatbots, chat                |
-| **student** | Chat only (chatbots có`allowed_roles` phù hợp) |
-
----
-
-## 7. Quick Commands
-
-### Local Development
-
+### Bước 2: Khởi chạy toàn bộ hệ thống bằng Docker Compose
 ```bash
-# Start all services
-docker-compose -f docker-compose.local.yml up -d --build
-
-# View logs
-docker-compose -f docker-compose.local.yml logs -f
-
-# Stop all
-docker-compose -f docker-compose.local.yml down
+docker compose -f docker-compose.local.yml up -d --build
 ```
 
-### Production (GKE)
+Hệ thống sẽ tự động khởi động các dịch vụ:
+- **Frontend Web UI**: `http://localhost:3000`
+- **Core Backend API**: `http://localhost:8000` (Tài liệu Swagger: `http://localhost:8000/docs`)
+- **Auth Backend API**: `http://localhost:8001` (Tài liệu Swagger: `http://localhost:8001/docs`)
+- **PostgreSQL 15**: `localhost:5432` (Database: `it_student_chatbot`)
+- **Qdrant Vector DB**: `http://localhost:6333/dashboard`
+- **Redis Cache**: `localhost:6379`
 
-```bash
-# Check pods
-kubectl get pods -n airc-chatbot
-
-# View logs
-kubectl logs -f deployment/core-service -n airc-chatbot
-
-# Restart deployments
-kubectl rollout restart deployment -n airc-chatbot
-
-# Access MongoDB shell
-kubectl exec -it deployment/mongodb -n airc-chatbot -- mongosh
-```
+### Bước 3: Đăng nhập và trải nghiệm
+1. Truy cập `http://localhost:3000`
+2. Đăng nhập với tài khoản sinh viên `sv01@eau.edu.vn` / mật khẩu `Pass123`.
+3. Thử đặt các câu hỏi:
+   - *'Kỳ tới em được đăng ký những môn học nào?'*
+   - *'Em muốn theo hướng Lập trình Web thì nên chọn môn gì?'*
+   - *'Môn Lập trình Web có những điều kiện tiên quyết nào và cho em xin tài liệu học tập?'*
+   - *'Em bị trượt môn Kiến trúc máy tính thì có đăng ký được Hệ điều hành không?'*
 
 ---
 
-## 📝 License
+## 📸 6. Hình Ảnh Giao Diện Hệ Thống
 
-MIT License - AIRC Team 2024-2026
+Toàn bộ ảnh chụp thực tế từ hệ thống được lưu tại thư mục [`Report/image`](Report/image/):
+- **Đăng nhập & Xác thực**: `01_dang_nhap.png`, `01b_dang_nhap_mobile.png`, `02_dang_ky.png`
+- **Sinh viên**:
+  - Tư vấn lộ trình môn học: `12_sv_chat_tu_van_mon.png`
+  - Trích xuất nguồn tài liệu PDF: `12b_sv_chat_nguon_tham_khao.png`
+  - Danh sách môn đủ điều kiện: `13_sv_mon_du_dieu_kien.png`
+  - Bảng điểm cá nhân: `14_sv_bang_diem.png`
+  - Trợ lý giọng nói Live Voice: `18_sv_live_voice.png`
+- **Giảng viên**:
+  - Tra cứu bảng điểm sinh viên: `21_gv_quan_ly_diem.png`
+  - Sơ đồ điều kiện tiên quyết môn học: `23b_gv_tien_quyet.png`
+- **Quản trị viên**:
+  - Quản lý người dùng & vai trò: `31_admin_nguoi_dung.png`
+  - Cấu hình RAG Pipeline: `35_admin_cau_hinh_chatbot.png`
+
+---
+
+## 📄 7. Báo Cáo Học Thuật
+
+Chi tiết cơ sở lý thuyết Trí tuệ nhân tạo, thiết kế giải thuật, mô hình toán học và đánh giá thực nghiệm được trình bày đầy đủ trong tài liệu:  
+👉 **[`Report/BTL_TTNT_NHOM_15.docx`](Report/BTL_TTNT_NHOM_15.docx)**
+
+---
+
+## 👥 8. Thành Viên Thực Hiện (Nhóm 15)
+
+1. **Lê Hải Đăng** (Nhóm trưởng) — MSV: 20233301 — Lớp: DCCNTT14.9
+2. **Lê Minh Quân** — MSV: 20233302 — Lớp: DCCNTT14.9
+3. **Lê Xuân Đạt** — MSV: 20233303 — Lớp: DCCNTT14.9
+4. **Lê Thanh Tùng** — MSV: 20233304 — Lớp: DCCNTT14.9
+5. **Phạm Bảo Sơn** — MSV: 20233305 — Lớp: DCCNTT14.9
+
+---
+*Bắc Ninh, Năm 2026 — Khoa Công nghệ Thông tin, Trường Đại học Công nghệ Đông Á.*

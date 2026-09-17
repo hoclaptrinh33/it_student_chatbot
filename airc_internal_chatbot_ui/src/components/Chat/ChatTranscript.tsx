@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Avatar, Button, Spin, Tooltip } from 'antd';
+import { Avatar, Button, Tooltip } from 'antd';
 import { DownloadOutlined, RobotOutlined } from '@ant-design/icons';
 import ChatMessageItem from '@/components/Chat/ChatMessageItem';
-import RAGDebugPanel, { RAGDebugMetrics } from '@/components/Chat/RAGDebugPanel';
+
 import { ChatMessage } from '@/core/entities/Chat';
 import chatService from '@/services/chatService';
 import useChatStore from '@/stores/chatStore';
@@ -36,7 +36,7 @@ function toMarkdown(messages: ChatMessage[]): string {
 
 export default function ChatTranscript({ getBranchesAt, emptyHint }: ChatTranscriptProps) {
     const {
-        messages, loading, lastDebugMetrics, currentSessionId,
+        messages, loading, currentSessionId,
         createBranch, regenerateMessage, selectSession, sendMessage,
     } = useChatStore();
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -66,9 +66,9 @@ export default function ChatTranscript({ getBranchesAt, emptyHint }: ChatTranscr
 
     if (messages.length === 0) {
         return (
-            <div className="h-full flex flex-col justify-center items-center text-gray-400 gap-4 p-4">
+            <div className="min-h-full flex flex-col justify-start items-center text-slate-400 py-2 px-1">
                 {emptyHint}
-                {suggestions.length > 0 && (
+                {!emptyHint && suggestions.length > 0 && (
                     <div className="flex flex-wrap justify-center gap-2 max-w-xl">
                         {suggestions.map((item) => (
                             <Button key={item} size="small" onClick={() => sendMessage(item)}>
@@ -109,18 +109,39 @@ export default function ChatTranscript({ getBranchesAt, emptyHint }: ChatTranscr
                 );
             })}
             {loading && messages[messages.length - 1]?.role !== 'assistant' && (
-                <div className="flex justify-start">
-                    <div className="max-w-[80%] flex gap-3">
-                        <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#dc2626' }} />
-                        <div className="bg-white border p-3 rounded-lg shadow-sm">
-                            <Spin /> <span className="text-gray-400 text-sm ml-2">Đang xử lý...</span>
+                <div className="flex justify-start py-2">
+                    <div className="max-w-[85%] flex gap-3 items-start">
+                        <Avatar
+                            icon={<RobotOutlined />}
+                            className="shadow-sm shrink-0 mt-1"
+                            style={{ background: 'linear-gradient(135deg, #0F4C81 0%, #0D9488 100%)' }}
+                            size={36}
+                        />
+                        <div className="bg-white border border-slate-200/80 p-4 rounded-2xl rounded-tl-xs shadow-xs">
+                            <div className="flex items-center gap-2 mb-2 pb-1 border-b border-slate-100">
+                                <span className="text-xs font-semibold text-[#0F4C81]">
+                                    Cố vấn Học tập Khoa CNTT
+                                </span>
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100"></span>
+                            </div>
+                            <div className="flex items-center gap-3 py-1 px-1">
+                                <div className="relative w-6 h-6 flex items-center justify-center shrink-0">
+                                    <span className="absolute inset-0 rounded-full bg-[#0F4C81]/10 animate-ping"></span>
+                                    <span className="absolute inset-0 rounded-full border-2 border-slate-100 border-t-[#0F4C81] border-r-[#0D9488] animate-spin"></span>
+                                    <span className="absolute w-3.5 h-3.5 rounded-full border-2 border-transparent border-b-[#38bdf8] border-l-[#0D9488] animate-[spin_1.2s_linear_infinite_reverse]"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F4C81] animate-pulse"></span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[#0F4C81]/70">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F4C81] animate-bounce [animation-delay:-0.3s]"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D9488] animate-bounce [animation-delay:-0.15s]"></span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-bounce"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
-            {lastDebugMetrics && !loading && (
-                <RAGDebugPanel metrics={lastDebugMetrics as RAGDebugMetrics} />
-            )}
+
         </div>
     );
 }

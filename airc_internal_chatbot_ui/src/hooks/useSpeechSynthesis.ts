@@ -8,6 +8,8 @@ import {
     getAudioContext,
 } from '@/utils/voicePlayback';
 
+export type TTSEngine = 'browser' | 'edge';
+
 interface UseSpeechSynthesisReturn {
     isPlaying: boolean;
     currentSentence: string;
@@ -15,6 +17,8 @@ interface UseSpeechSynthesisReturn {
     stop: () => void;
     pause: () => void;
     resume: () => void;
+    ttsEngine: TTSEngine;
+    setTtsEngine: (engine: TTSEngine) => void;
 }
 
 type PreparedClip = {
@@ -22,27 +26,47 @@ type PreparedClip = {
     buffer: AudioBuffer | null;
 };
 
-function pickVietnameseBrowserVoice(preferredId: string): SpeechSynthesisVoice | undefined {
+function pickVietnameseBrowserVoice(preferredId?: string): SpeechSynthesisVoice | undefined {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         return undefined;
     }
     const voices = window.speechSynthesis.getVoices();
-    const vi = voices.filter((voice) => voice.lang.toLowerCase().startsWith('vi'));
-    if (!vi.length) {
+    if (!voices.length) {
         return undefined;
     }
-    const wantFemale = preferredId.includes('HoaiMy');
+    const vi = voices.filter((voice) => voice.lang.toLowerCase().replace('_', '-').startsWith('vi'));
+    if (!vi.length) {
+        const viByName = voices.filter((voice) => /vietnam|tiếng việt/i.test(voice.name));
+        if (viByName.length) return viByName[0];
+        return voices.find((v) => v.default) || voices[0];
+    }
+    const wantFemale = !preferredId || preferredId.includes('HoaiMy') || preferredId === 'browser';
     const gendered = vi.find((voice) =>
         wantFemale
-            ? /female|hoài|hoai|my|nữ/i.test(voice.name)
-            : /male|nam|minh/i.test(voice.name)
+            ? /female|hoài|hoai|my|nữ|chi|mai/i.test(voice.name)
+            : /male|nam|minh|hùng|anh/i.test(voice.name)
     );
-    return gendered || vi[0];
+    const natural = vi.find((voice) => /natural|online/i.test(voice.name));
+    return gendered || natural || vi[0];
 }
 
 export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentSentence, setCurrentSentence] = useState('');
+    const [ttsEngine, setTtsEngineState] = useState<TTSEngine>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('preferred_tts_engine');
+            if (saved === 'browser' || saved === 'edge') return saved;
+        }
+        return 'browser'; // Mặc định trình duyệt để không bị delay
+    });
+
+    const setTtsEngine = useCallback((engine: TTSEngine) => {
+        setTtsEngineState(engine);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('preferred_tts_engine', engine);
+        }
+    }, []);
 
     const abortControllerRef = useRef<AbortController | null>(null);
     const queueRef = useRef<string[]>([]);
@@ -106,21 +130,25 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
             return;
         }
         await new Promise<void>((resolve) => {
-            pendingSpeakRef.current = resolve;
+            let settled = false;
+            const finish = () => {
+                if (!settled) {
+                    settled = true;
+                    pendingSpeakRef.current = null;
+                    resolve();
+                }
+            };
+
+            pendingSpeakRef.current = finish;
             const utterance = new SpeechSynthesisUtterance(sentence);
             utterance.lang = 'vi-VN';
+            utterance.rate = 1.05;
             const matched = pickVietnameseBrowserVoice(voiceRef.current);
             if (matched) {
                 utterance.voice = matched;
             }
-            utterance.onend = () => {
-                pendingSpeakRef.current = null;
-                resolve();
-            };
-            utterance.onerror = () => {
-                pendingSpeakRef.current = null;
-                resolve();
-            };
+            utterance.onend = finish;
+            utterance.onerror = finish;
             window.speechSynthesis.speak(utterance);
         });
     }, []);
@@ -144,6 +172,22 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
                 return isTurnValid(turnId);
             };
 
+            // Ưu tiên chạy chế độ Trình duyệt (Web Speech API) - Tức thì, không cần gọi mạng, không delay
+            if (ttsEngine === 'browser' || voiceRef.current === 'browser') {
+                for (const sentence of sentences) {
+                    if (!(await waitIfPaused())) return;
+                    if (!isTurnValid(turnId)) return;
+                    setCurrentSentence(sentence);
+                    await speakWithBrowser(sentence);
+                    if (!isTurnValid(turnId)) return;
+                }
+                if (isTurnValid(turnId)) {
+                    setIsPlaying(false);
+                    setCurrentSentence('');
+                }
+                return;
+            }
+
             const abortController = new AbortController();
             abortControllerRef.current = abortController;
             const voice = voiceRef.current;
@@ -152,7 +196,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
 
             const loadClip = async (sentence: string): Promise<PreparedClip> => {
                 try {
-                    let blob = await voiceService.generateTTSBlob(
+                    const blob = await voiceService.generateTTSBlob(
                         sentence,
                         voice,
                         abortController.signal
@@ -260,7 +304,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
 
             await processQueue();
         },
-        [stop, getScheduler, speakWithBrowser]
+        [stop, getScheduler, speakWithBrowser, ttsEngine]
     );
 
     useEffect(() => {
@@ -270,6 +314,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
             .then((config) => {
                 if (!cancelled && config.tts_voice) {
                     voiceRef.current = config.tts_voice;
+                    if (config.tts_voice === 'browser') {
+                        setTtsEngineState('browser');
+                    }
                 }
             })
             .catch(() => {});
@@ -294,7 +341,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
             stop,
             pause,
             resume,
+            ttsEngine,
+            setTtsEngine,
         }),
-        [isPlaying, currentSentence, speak, stop, pause, resume]
+        [isPlaying, currentSentence, speak, stop, pause, resume, ttsEngine, setTtsEngine]
     );
 }

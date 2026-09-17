@@ -14,6 +14,7 @@ import {
     MenuUnfoldOutlined,
     BookOutlined,
     FormOutlined,
+    FolderOpenOutlined,
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import FitLogo from '../Common/FitLogo';
@@ -100,18 +101,28 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
             );
         }
 
-        // Teacher: Tạo dataset, upload tài liệu, chat với bot
+        // Teacher: Nghiệp vụ giảng dạy, cố vấn, tài liệu, điểm số, bộ dữ liệu
         if (role === 'teacher') {
             items.push(
                 {
-                    key: '/dashboard/datasets',
-                    icon: <DatabaseOutlined />,
-                    label: 'Bộ dữ liệu',
+                    key: '/dashboard/grades',
+                    icon: <FormOutlined />,
+                    label: 'Quản lý điểm & SV',
                 },
                 {
-                    key: '/admin/grades',
-                    icon: <FormOutlined />,
-                    label: 'Nhập điểm',
+                    key: '/dashboard/materials',
+                    icon: <FolderOpenOutlined />,
+                    label: 'Tài liệu giảng dạy',
+                },
+                {
+                    key: '/dashboard/courses',
+                    icon: <BookOutlined />,
+                    label: 'Tra cứu môn học',
+                },
+                {
+                    key: '/dashboard/datasets',
+                    icon: <DatabaseOutlined />,
+                    label: 'Bộ dữ liệu AI',
                 }
             );
         }
@@ -120,11 +131,27 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
         items.push({
             key: '/dashboard/chat',
             icon: <MessageOutlined />,
-            label: 'Trò chuyện AI',
+            label: role === 'teacher' ? 'Trợ lý AI Giảng viên' : 'Trò chuyện AI',
         });
 
         return items;
     };
+
+    const selectedKey = (() => {
+        if (pathname.startsWith('/dashboard/datasets')) return '/dashboard/datasets';
+        if (pathname.startsWith('/dashboard/courses')) return '/dashboard/courses';
+        if (pathname.startsWith('/dashboard/grades') || pathname.startsWith('/admin/grades')) {
+            return userRole === 'teacher' ? '/dashboard/grades' : '/admin/grades';
+        }
+        if (pathname.startsWith('/dashboard/materials')) return '/dashboard/materials';
+        if (pathname.startsWith('/dashboard/chat')) return '/dashboard/chat';
+        if (pathname.startsWith('/admin/users')) return '/admin/users';
+        if (pathname.startsWith('/admin/roles')) return '/admin/roles';
+        if (pathname.startsWith('/admin/permissions')) return '/admin/permissions';
+        if (pathname.startsWith('/admin/chatbots')) return '/admin/chatbots';
+        if (pathname.startsWith('/admin/settings')) return '/admin/settings';
+        return pathname;
+    })();
 
     return (
         <Sider
@@ -146,7 +173,7 @@ const MainSidebar: React.FC<SidebarProps> = ({ collapsed, onCollapse }) => {
             <Menu
                 mode="inline"
                 defaultSelectedKeys={['/dashboard']}
-                selectedKeys={[pathname]}
+                selectedKeys={[selectedKey]}
                 items={getMenuItems(userRole)}
                 onClick={({ key }) => router.push(key)}
                 style={{ borderRight: 0, padding: '0 8px', flex: 1 }}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import useChatStore from '@/stores/chatStore';
-import { useSpeechSynthesis } from './useSpeechSynthesis';
+import { useSpeechSynthesis, TTSEngine } from './useSpeechSynthesis';
 import {
     LIVE_VOICE_SILENCE_MS,
     MIC_LEVEL_EMIT_INTERVAL_MS,
@@ -65,6 +65,8 @@ interface UseLiveVoiceBotReturn {
     micAudioLevel: number;
     microphoneDenied: boolean;
     lastError: string | null;
+    ttsEngine: TTSEngine;
+    setTtsEngine: (engine: TTSEngine) => void;
 }
 
 export function useLiveVoiceBot(): UseLiveVoiceBotReturn {
@@ -90,6 +92,8 @@ export function useLiveVoiceBot(): UseLiveVoiceBotReturn {
         pause: ttsPause,
         resume: ttsResume,
         currentSentence: aiSubtitle,
+        ttsEngine,
+        setTtsEngine,
     } = useSpeechSynthesis();
 
     const turnIdRef = useRef(0);
@@ -546,5 +550,7 @@ export function useLiveVoiceBot(): UseLiveVoiceBotReturn {
         micAudioLevel,
         microphoneDenied,
         lastError,
+        ttsEngine,
+        setTtsEngine,
     };
 }

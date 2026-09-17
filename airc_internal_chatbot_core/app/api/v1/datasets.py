@@ -332,6 +332,24 @@ async def remove_dataset_file(
     return SuccessResponse(status="success")
 
 
+@router.post("/{dataset_id}/retry", response_model=SuccessResponse)
+async def retry_dataset_processing(
+    dataset_id: str,
+    current_user: User = Depends(get_current_user),
+    dataset_service: DatasetService = Depends(get_dataset_service),
+):
+    """
+    Chạy lại toàn bộ các file bị lỗi hoặc đang pending trong dataset
+    """
+    user_role = current_user.role
+    if user_role not in ["admin", "teacher"]:
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    count = await dataset_service.retry_failed_files(dataset_id)
+    return SuccessResponse(status=f"Đã đưa {count} file vào hàng đợi xử lý lại")
+
+
+
 @router.get(
     "/{dataset_id}/files/{dataset_file_id}/chunks",
     response_model=List[ChunkResponse]

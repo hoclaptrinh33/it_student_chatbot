@@ -10,6 +10,11 @@ Chỉ ghi thay đổi và bug. Trạng thái: `Đã làm` · `Đã sửa` · `Ch
 
 | Mục | Trạng thái |
 |-----|------------|
+| Cố vấn nói giọng giáo viên (cô/em), không lộ [AcademicFacts]/PREREQUISITE; tên file tài liệu thành link `/files/<id>/view` mở tab mới | Đã sửa |
+| Trị gốc: bot cố vấn không reject no_context khi academic facts bật; default intent COURSE_ADVICE; map tên môn từ catalog | Đã sửa |
+| Câu “tình hình học tập” / bảng điểm xếp COURSE_ADVICE; HYBRID không reject khi đã có AcademicFacts dù dataset trống | Đã sửa |
+| Chat `xin chào` / greeting không đi RAG; trả lời giới thiệu cố vấn thay vì NO CONTEXT | Đã sửa |
+| HF_HOME Core/Worker `/tmp/hf_home` (volume `models_cache` mount đè, appuser không ghi được) | Đã sửa |
 | Auth + Core cắt Mongo/Motor: SQLAlchemy 2.0 + asyncpg, `DATABASE_URL`, repository dict `id` UUID | Đã làm |
 | `ChatbotRepository.get_by_id` JOIN `chatbot_datasets` hydrate `dataset_ids`; keyword search ILIKE token | Đã làm |
 | Worker ingest mở `SessionLocal` Postgres, commit sau `process_dataset_file` | Đã làm |

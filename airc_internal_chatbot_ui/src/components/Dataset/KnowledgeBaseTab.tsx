@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Table, Button, Input, Switch, Tooltip, Modal, Tag, notification, Select } from 'antd';
-import { EyeOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, LoadingOutlined, DownloadOutlined } from '@ant-design/icons';
+import { EyeOutlined, DeleteOutlined, SearchOutlined, PlusOutlined, LoadingOutlined, DownloadOutlined, ReloadOutlined } from '@ant-design/icons';
 import { DatasetFile } from '@/core/entities/Dataset';
 import datasetService from '@/services/datasetService';
 import fileService from '@/services/fileService';
@@ -32,6 +32,7 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
     const [courses, setCourses] = useState<Course[]>([]);
     const [bindCourseId, setBindCourseId] = useState<string | undefined>();
     const [bindMaterialType, setBindMaterialType] = useState<string | undefined>();
+    const [isRetrying, setIsRetrying] = useState(false);
 
     // File Input Ref
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -238,11 +239,32 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
         }
     };
 
-    const handlePreviewFile = (file: DatasetFile | { id: string }) => {
+    const handlePreviewFile = async (file: DatasetFile | { id: string }) => {
         const fileId = 'file_id' in file ? file.file_id : file.id;
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-        const previewUrl = `${baseUrl}/files/${fileId}/view`;
-        window.open(previewUrl, '_blank');
+        const fileName = 'file_name' in file ? file.file_name : undefined;
+        try {
+            await fileService.openFileInBrowser(fileId, fileName);
+        } catch (error) {
+            console.error('Preview file error:', error);
+            notification.error({ message: 'Không thể mở tài liệu để xem trước' });
+        }
+    };
+
+    const handleRetryFailed = async () => {
+        setIsRetrying(true);
+        try {
+            await datasetService.retryDataset(datasetId);
+            notification.success({
+                message: 'Đã yêu cầu xử lý lại',
+                description: 'Các tệp lỗi hoặc đang chờ đã được đưa vào hàng đợi xử lý.',
+            });
+            fetchFiles();
+        } catch (error) {
+            console.error('Retry dataset failed', error);
+            notification.error({ message: 'Yêu cầu chạy lại thất bại' });
+        } finally {
+            setIsRetrying(false);
+        }
     };
 
     const columns = [
@@ -346,6 +368,15 @@ const KnowledgeBaseTab: React.FC<KnowledgeBaseTabProps> = ({ datasetId, files, f
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <div className="flex gap-2">
+                        {files.some((f) => f.status === 'error' || f.status === 'pending') && (
+                            <Button
+                                icon={<ReloadOutlined />}
+                                loading={isRetrying}
+                                onClick={handleRetryFailed}
+                            >
+                                Chạy lại file lỗi
+                            </Button>
+                        )}
                         {selectedRowKeys.length > 0 && (
                             <Button danger onClick={handleBulkDelete}>Xóa mục đã chọn ({selectedRowKeys.length})</Button>
                         )}

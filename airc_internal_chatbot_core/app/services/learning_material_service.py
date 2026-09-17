@@ -61,3 +61,6 @@ class LearningMaterialService:
                 raise ValueError("Course not found")
             payload["course_id"] = course["id"]
         return await self.material_repo.update_material(material_id, payload)
+
+    async def delete_material(self, material_id: str) -> bool:
+        return await self.material_repo.delete_material(material_id)
