@@ -1,4 +1,5 @@
 # Hệ Thống Hỏi Đáp Ngôn Ngữ Tự Nhiên Hỗ Trợ Chọn Môn Học và Tài Liệu Học Tập Cho Sinh Viên Khoa CNTT
+
 ### IT Student Academic Advisor & Learning Materials Chatbot
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
@@ -9,9 +10,9 @@
 [![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-> **Học phần**: Trí tuệ nhân tạo (Artificial Intelligence)  
-> **Trường**: Đại học Công nghệ Đông Á (EAU) — **Khoa**: Công nghệ Thông tin  
-> **Nhóm thực hiện**: Nhóm 15  
+> **Học phần**: Trí tuệ nhân tạo (Artificial Intelligence)
+> **Trường**: Đại học Công nghệ Đông Á (EAU) — **Khoa**: Công nghệ Thông tin
+> **Nhóm thực hiện**: Nhóm 15
 > **Báo cáo đồ án chính thức**: [`Report/BTL_TTNT_NHOM_15.docx`](Report/BTL_TTNT_NHOM_15.docx)
 
 ---
@@ -19,6 +20,7 @@
 ## 📌 1. Giới Thiệu Dự Án
 
 Trong đào tạo đại học theo học chế tín chỉ, sinh viên ngành Công nghệ Thông tin (CNTT) thường gặp nhiều khó khăn trong việc:
+
 1. **Nắm bắt chuỗi môn học tiên quyết**: Đồ thị phụ thuộc môn học (Prerequisites) phức tạp, nếu trượt hoặc học sai thứ tự sẽ bị nghẽn tiến độ tốt nghiệp.
 2. **Lựa chọn định hướng chuyên ngành**: Lúng túng giữa các nhánh nghề nghiệp (Kỹ thuật phần mềm / Web, Trí tuệ nhân tạo / Khoa học dữ liệu, An toàn thông tin / Mạng máy tính).
 3. **Tìm kiếm tài liệu học tập chính thống**: Tài liệu bài giảng, đề cương chi tiết (syllabus), đề thi tham khảo bị phân tán.
@@ -84,30 +86,34 @@ Hệ thống được xây dựng theo mô hình **Microservices**:
 ## 📊 4. Dữ Liệu Học Vụ Mẫu (Seed Data)
 
 Hệ thống đã nạp sẵn khung chương trình đào tạo chuẩn của Khoa CNTT:
+
 - **23 môn học**: Từ học kỳ 1 đến học kỳ 6, bao gồm Đại cương, Cơ sở ngành và Chuyên ngành (Web, AI, Mạng máy tính, An toàn thông tin).
 - **25 quan hệ tiên quyết**: Ràng buộc cứng (`PREREQUISITE`), ràng buộc học trước (`PREVIOUS`), ràng buộc song hành (`CO_REQUISITE`).
 - **18+ tài liệu PDF**: Giáo trình, slide và đề cương chi tiết học phần đã chunk và vector hóa vào Qdrant.
 
 ### Tài khoản kiểm thử mẫu:
-| Email | Vai trò | Họ và tên / Mô tả | Mật khẩu |
-| :--- | :--- | :--- | :--- |
-| `admin@eau.edu.vn` | Quản trị viên | Quản trị viên Khoa CNTT | `Pass123` |
-| `gv01@eau.edu.vn` | Giảng viên | ThS. Nguyễn Văn An (Cố vấn học tập) | `Pass123` |
-| `sv01@eau.edu.vn` | Sinh viên | Lê Hải Đăng (SV năm 2 - có môn rớt cần học lại) | `Pass123` |
-| `sv_web@eau.edu.vn` | Sinh viên | Trần Thị Mai (SV định hướng Lập trình Web) | `Pass123` |
-| `sv_ai@eau.edu.vn` | Sinh viên | Phạm Văn Bình (SV định hướng Trí tuệ nhân tạo) | `Pass123` |
-| `sv_new@eau.edu.vn` | Sinh viên | Hoàng Gia Bảo (SV năm nhất mới nhập học) | `Pass123` |
+
+| Email                 | Vai trò         | Họ và tên / Mô tả                                     | Mật khẩu  |
+| :-------------------- | :--------------- | :--------------------------------------------------------- | :---------- |
+| `admin@eau.edu.vn`  | Quản trị viên | Quản trị viên Khoa CNTT                                 | `Pass123` |
+| `gv01@eau.edu.vn`   | Giảng viên     | ThS. Nguyễn Văn An (Cố vấn học tập)                  | `Pass123` |
+| `sv01@eau.edu.vn`   | Sinh viên       | Lê Hải Đăng (SV năm 2 - có môn rớt cần học lại) | `Pass123` |
+| `sv_web@eau.edu.vn` | Sinh viên       | Trần Thị Mai (SV định hướng Lập trình Web)         | `Pass123` |
+| `sv_ai@eau.edu.vn`  | Sinh viên       | Phạm Văn Bình (SV định hướng Trí tuệ nhân tạo)  | `Pass123` |
+| `sv_new@eau.edu.vn` | Sinh viên       | Hoàng Gia Bảo (SV năm nhất mới nhập học)            | `Pass123` |
 
 ---
 
 ## 🚀 5. Hướng Dẫn Cài Đặt & Chạy Hệ Thống
 
 ### Yêu cầu tiên quyết:
+
 - Docker và Docker Compose (hoặc Podman)
 - Node.js 18+ và Python 3.11+ (nếu chạy không qua Docker)
 - API Key Google Gemini (`GEMINI_API_KEY`)
 
 ### Bước 1: Sao chép dự án và cấu hình môi trường
+
 ```bash
 git clone https://github.com/hoclaptrinh33/it_student_chatbot.git
 cd it_student_chatbot
@@ -118,11 +124,13 @@ cp airc_internal_chatbot_core/.env.example airc_internal_chatbot_core/.env
 ```
 
 ### Bước 2: Khởi chạy toàn bộ hệ thống bằng Docker Compose
+
 ```bash
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
 Hệ thống sẽ tự động khởi động các dịch vụ:
+
 - **Frontend Web UI**: `http://localhost:3000`
 - **Core Backend API**: `http://localhost:8000` (Tài liệu Swagger: `http://localhost:8000/docs`)
 - **Auth Backend API**: `http://localhost:8001` (Tài liệu Swagger: `http://localhost:8001/docs`)
@@ -131,6 +139,7 @@ Hệ thống sẽ tự động khởi động các dịch vụ:
 - **Redis Cache**: `localhost:6379`
 
 ### Bước 3: Đăng nhập và trải nghiệm
+
 1. Truy cập `http://localhost:3000`
 2. Đăng nhập với tài khoản sinh viên `sv01@eau.edu.vn` / mật khẩu `Pass123`.
 3. Thử đặt các câu hỏi:
@@ -144,6 +153,7 @@ Hệ thống sẽ tự động khởi động các dịch vụ:
 ## 📸 6. Hình Ảnh Giao Diện Hệ Thống
 
 Toàn bộ ảnh chụp thực tế từ hệ thống được lưu tại thư mục [`Report/image`](Report/image/):
+
 - **Đăng nhập & Xác thực**: `01_dang_nhap.png`, `01b_dang_nhap_mobile.png`, `02_dang_ky.png`
 - **Sinh viên**:
   - Tư vấn lộ trình môn học: `12_sv_chat_tu_van_mon.png`
@@ -162,18 +172,19 @@ Toàn bộ ảnh chụp thực tế từ hệ thống được lưu tại thư m
 
 ## 📄 7. Báo Cáo Học Thuật
 
-Chi tiết cơ sở lý thuyết Trí tuệ nhân tạo, thiết kế giải thuật, mô hình toán học và đánh giá thực nghiệm được trình bày đầy đủ trong tài liệu:  
+Chi tiết cơ sở lý thuyết Trí tuệ nhân tạo, thiết kế giải thuật, mô hình toán học và đánh giá thực nghiệm được trình bày đầy đủ trong tài liệu:
 👉 **[`Report/BTL_TTNT_NHOM_15.docx`](Report/BTL_TTNT_NHOM_15.docx)**
 
 ---
 
 ## 👥 8. Thành Viên Thực Hiện (Nhóm 15)
 
-1. **Lê Hải Đăng** (Nhóm trưởng) — MSV: 20233301 — Lớp: DCCNTT14.9
+1. **Lê Hải Đăng** (Nhóm trưởng) — MSV: 20233288 — Lớp: DCCNTT14.9
 2. **Lê Minh Quân** — MSV: 20233302 — Lớp: DCCNTT14.9
 3. **Lê Xuân Đạt** — MSV: 20233303 — Lớp: DCCNTT14.9
 4. **Lê Thanh Tùng** — MSV: 20233304 — Lớp: DCCNTT14.9
 5. **Phạm Bảo Sơn** — MSV: 20233305 — Lớp: DCCNTT14.9
 
 ---
+
 *Bắc Ninh, Năm 2026 — Khoa Công nghệ Thông tin, Trường Đại học Công nghệ Đông Á.*

@@ -147,4 +147,6 @@ build_plain_pdf.py
 /document/
 /Report/dump_*.txt
 Report/dump_*.txt
+Report/*backup.docx
+Report/test_*.docx
 
