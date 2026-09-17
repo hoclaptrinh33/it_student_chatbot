@@ -149,4 +149,6 @@ build_plain_pdf.py
 Report/dump_*.txt
 Report/*backup.docx
 Report/test_*.docx
+~$*.docx
+Report/~$*.docx
 

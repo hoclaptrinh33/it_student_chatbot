@@ -25,7 +25,7 @@ def build_chapter_3_and_conclusion(doc):
     add_bullet(doc, "Bộ vi xử lý (CPU)", "AMD Ryzen 7 / Intel Core i7 (8 nhân, 16 luồng, xung nhịp 3.8 GHz).")
     add_bullet(doc, "Bộ nhớ trong (RAM)", "32 GB DDR4 / DDR5 Bus 3200 MHz.")
     add_bullet(doc, "Ổ cứng lưu trữ", "512 GB NVMe M.2 SSD (Tốc độ đọc/ghi tuần tự > 3500 MB/s).")
-    add_bullet(doc, "Hạ tầng mạng", "Kết nối Internet băng thông cao, độ trễ tới Google Gemini API < 40ms.")
+    add_bullet(doc, "Hạ tầng mạng", "Kết nối Internet băng thông cao, độ trễ tới dịch vụ LLM API < 40ms.")
 
     add_heading_3(doc, "3.1.2 Cấu hình môi trường phần mềm và Docker Compose")
     add_p(doc, "Hệ thống được đóng gói hoàn toàn trong các vùng chứa Docker để đảm bảo tính nhất quán tuyệt đối giữa môi trường phát triển và sản xuất:")
@@ -34,7 +34,7 @@ def build_chapter_3_and_conclusion(doc):
     add_bullet(doc, "Backend Runtimes", "Python 3.11.8 (FastAPI, SQLAlchemy 2.0 Asyncio, asyncpg, Sentence-Transformers).")
     add_bullet(doc, "Frontend Runtime", "Node.js v20.12 LTS (Next.js 14, React 18, TypeScript).")
     add_bullet(doc, "Hệ quản trị CSDL", "PostgreSQL 15 Alpine, Qdrant Vector DB v1.9, Redis 7.2 Alpine.")
-    add_bullet(doc, "Mô hình ngôn ngữ lớn", "Google Gemini 1.5 Flash API (khóa API bản quyền cá nhân).")
+    add_bullet(doc, "Mô hình ngôn ngữ lớn", "Dịch vụ Mô hình ngôn ngữ lớn (LLM API).")
 
     # 3.2 Kịch bản kiểm thử
     add_heading_2(doc, "3.2 Kịch bản kiểm thử chương trình với các trường hợp thực tế (Test Cases)")
@@ -89,7 +89,7 @@ def build_chapter_3_and_conclusion(doc):
     add_styled_table(doc, headers_eval, rows_eval, [2.5, 1.3, 1.4, 1.8], "Bảng 3.1: So sánh hiệu năng định lượng giữa các phương pháp tiếp cận")
 
     add_heading_3(doc, "3.3.2 Đánh giá độ tin cậy và triệt tiêu ảo giác (Zero Hallucination)")
-    add_p(doc, "Nhờ cơ chế Tiêm tri thức học vụ ([AcademicFacts] Injection), mô hình Gemini bị ràng buộc nghiêm ngặt chỉ được phép sử dụng danh sách mã môn, số tín chỉ và điều kiện tiên quyết có sẵn trong cơ sở dữ liệu. Trong toàn bộ 100 lượt thử nghiệm, hệ thống đạt tỷ lệ 100% không bịa đặt mã môn học lạ, không tự ý cho phép sinh viên đăng ký môn học khi chưa thỏa mãn điều kiện tiên quyết.")
+    add_p(doc, "Nhờ cơ chế Tiêm tri thức học vụ ([AcademicFacts] Injection), mô hình LLM bị ràng buộc nghiêm ngặt chỉ được phép sử dụng danh sách mã môn, số tín chỉ và điều kiện tiên quyết có sẵn trong cơ sở dữ liệu. Trong toàn bộ 100 lượt thử nghiệm, hệ thống đạt tỷ lệ 100% không bịa đặt mã môn học lạ, không tự ý cho phép sinh viên đăng ký môn học khi chưa thỏa mãn điều kiện tiên quyết.")
 
     add_heading_3(doc, "3.3.3 Đánh giá thời gian phản hồi (Latency Analysis)")
     add_p(doc, "Thời gian phản hồi là tiêu chí sống còn đối với trải nghiệm người dùng:")
@@ -105,14 +105,14 @@ def build_chapter_3_and_conclusion(doc):
     # 3.4 Đánh giá ưu điểm và hạn chế
     add_heading_2(doc, "3.4 Đánh giá ưu điểm và hạn chế của hệ thống")
     add_heading_3(doc, "3.4.1 Ưu điểm nổi bật")
-    add_bullet(doc, "Tính thực tiễn và tính học thuật cao", "Kết hợp nhuần nhuyễn giữa kiến thức AI cổ điển (Tìm kiếm không gian trạng thái, Đồ thị DAG, Bayes) với AI hiện đại (Vietnamese-SBERT, Vector DB Qdrant, Google Gemini RAG).")
+    add_bullet(doc, "Tính thực tiễn và tính học thuật cao", "Kết hợp nhuần nhuyễn giữa kiến thức AI cổ điển (Tìm kiếm không gian trạng thái, Đồ thị DAG, Bayes) với AI hiện đại (Vietnamese-SBERT, Vector DB Qdrant, Google LLM RAG).")
     add_bullet(doc, "Chính xác tuyệt đối về quy chế học vụ", "Cơ chế [AcademicFacts] giải quyết triệt để bài toán đau đầu nhất của các Chatbot AI hiện nay là hiện tượng ảo giác thông tin.")
     add_bullet(doc, "Bảo mật và cá nhân hóa sâu sắc", "Mỗi sinh viên có một hồ sơ bảng điểm và không gian cache riêng biệt, tuyệt đối không bị rò rỉ dữ liệu điểm số.")
     add_bullet(doc, "Giao diện hiện đại, đa tính năng", "Hỗ trợ đầy đủ từ chat văn bản, trích dẫn tài liệu PDF, tra cứu bảng điểm, xem cây môn học trực quan đến giao tiếp giọng nói hai chiều.")
 
     add_heading_3(doc, "3.4.2 Các hạn chế còn tồn tại")
     add_bullet(doc, "Chưa liên thông trực tiếp với Cổng thông tin đào tạo (SIS)", "Dữ liệu sinh viên hiện tại hoạt động dựa trên cơ chế seed mẫu và nhập liệu quản trị, chưa có cổng kết nối API trực tiếp vào hệ thống quản lý đào tạo chung của Nhà trường.")
-    add_bullet(doc, "Phụ thuộc vào kết nối Internet tới Gemini API", "Mặc dù đã có Semantic Cache giải tỏa áp lực, nhưng khi cần sinh các câu trả lời mới, hệ thống vẫn cần đường truyền Internet ổn định tới máy chủ Google.")
+    add_bullet(doc, "Phụ thuộc vào kết nối Internet tới dịch vụ LLM API", "Mặc dù đã có Semantic Cache giải tỏa áp lực, nhưng khi cần sinh các câu trả lời mới, hệ thống vẫn cần đường truyền Internet ổn định tới máy chủ Google.")
 
     doc.add_page_break()
 
@@ -156,7 +156,7 @@ def build_chapter_3_and_conclusion(doc):
         "[9] Nils Reimers and Iryna Gurevych, Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks, Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2019.",
         "[10] Qdrant Vector Database Documentation, https://qdrant.tech/documentation/, Truy cập năm 2026.",
         "[11] FastAPI Documentation, High performance, easy to learn, fast to code, ready for production, https://fastapi.tiangolo.com/, Truy cập năm 2026.",
-        "[12] Google Generative AI Python SDK Documentation, https://ai.google.dev/, Truy cập năm 2026.",
+        "[12] Large Language Model (LLM) API Documentation, Truy cập năm 2026.",
         "[13] PostgreSQL 15 Official Documentation, The PostgreSQL Global Development Group, https://www.postgresql.org/docs/15/, 2026.",
         "[14] Next.js 14 App Router Documentation, Vercel Inc., https://nextjs.org/docs, Truy cập năm 2026.",
         "[15] Herbert A. Simon, Why should machines learn?, Machine Learning: An Artificial Intelligence Approach, Morgan Kaufmann, 1983."
@@ -196,9 +196,9 @@ def build_chapter_3_and_conclusion(doc):
 git clone https://github.com/hoclaptrinh33/it_student_chatbot.git
 cd it_student_chatbot
 
-# Bước 2: Cấu hình khóa Google Gemini API
+# Bước 2: Cấu hình khóa dịch vụ LLM API
 cp airc_internal_chatbot_core/.env.example airc_internal_chatbot_core/.env
-# Mở file .env và điền GEMINI_API_KEY của bạn
+# Mở file .env và điền LLM_API_KEY của bạn
 
 # Bước 3: Khởi chạy toàn bộ hệ thống bằng Docker Compose
 docker compose -f docker-compose.local.yml up -d --build
@@ -214,11 +214,11 @@ docker compose -f docker-compose.local.yml up -d --build
     add_heading_2(doc, "3. Danh sách tài khoản demo đã được nạp sẵn (Seed Accounts)")
     headers_acc = ["Email đăng nhập", "Mật khẩu", "Vai trò (Role)", "Họ và tên / Mục đích kiểm thử"]
     rows_acc = [
-        ["admin@eau.edu.vn", "Pass123", "Quản trị viên (Admin)", "Quản trị toàn quyền hệ thống, người dùng, RAG pipeline"],
-        ["gv01@eau.edu.vn", "Pass123", "Giảng viên (Teacher)", "ThS. Nguyễn Văn An - Cố vấn học tập tra cứu điểm và môn"],
-        ["sv01@eau.edu.vn", "Pass123", "Sinh viên (Student)", "Lê Hải Đăng - SV năm 2 bị trượt môn INT1203 cần tư vấn"],
-        ["sv_web@eau.edu.vn", "Pass123", "Sinh viên (Student)", "Trần Thị Mai - SV định hướng chuyên sâu Lập trình Web"],
-        ["sv_ai@eau.edu.vn", "Pass123", "Sinh viên (Student)", "Phạm Văn Bình - SV định hướng chuyên sâu Trí tuệ nhân tạo"],
-        ["sv_new@eau.edu.vn", "Pass123", "Sinh viên (Student)", "Hoàng Gia Bảo - Tân sinh viên mới nhập học năm nhất"]
+        ["admin@eaut.edu.vn", "Pass123", "Quản trị viên (Admin)", "Quản trị toàn quyền hệ thống, người dùng, RAG pipeline"],
+        ["gv01@eaut.edu.vn", "Pass123", "Giảng viên (Teacher)", "ThS. Nguyễn Văn An - Cố vấn học tập tra cứu điểm và môn"],
+        ["sv01@eaut.edu.vn", "Pass123", "Sinh viên (Student)", "Lê Hải Đăng - SV năm 2 bị trượt môn INT1203 cần tư vấn"],
+        ["sv_web@eaut.edu.vn", "Pass123", "Sinh viên (Student)", "Trần Thị Mai - SV định hướng chuyên sâu Lập trình Web"],
+        ["sv_ai@eaut.edu.vn", "Pass123", "Sinh viên (Student)", "Phạm Văn Bình - SV định hướng chuyên sâu Trí tuệ nhân tạo"],
+        ["sv_new@eaut.edu.vn", "Pass123", "Sinh viên (Student)", "Hoàng Gia Bảo - Tân sinh viên mới nhập học năm nhất"]
     ]
     add_styled_table(doc, headers_acc, rows_acc, [2.0, 1.0, 1.8, 2.2], "Bảng Phụ lục 0.1: Danh sách các tài khoản kiểm thử mẫu nạp sẵn trong hệ thống")

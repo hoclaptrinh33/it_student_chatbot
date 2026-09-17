@@ -39,7 +39,7 @@ def build_introduction_and_chapter_1(doc):
     add_bullet(doc, "Khảo sát và chuẩn hóa Cơ sở tri thức (Knowledge Base)", "Xây dựng CSDL học vụ 23 môn học chuẩn, 25 quan hệ tiên quyết, bảng điểm cá nhân hóa và kho dữ liệu tài liệu học tập gồm 18+ tệp PDF (giáo trình chuẩn, slide bài giảng, đề cương chi tiết syllabus).")
     add_bullet(doc, "Xây dựng quy trình xử lý và phân đoạn văn bản tiếng Việt", "Vietnamese Text Chunking tối ưu theo các dấu phân tách ngữ nghĩa, bảo toàn trọn vẹn ngữ cảnh của từng điều khoản quy chế và nội dung bài giảng.")
     add_bullet(doc, "Ứng dụng mô hình nhúng ngôn ngữ sâu", "Dense Vector Embedding với Vietnamese-SBERT và Cơ sở dữ liệu vector Qdrant để thực hiện tìm kiếm ngữ nghĩa theo độ đo Cosine Similarity đạt tốc độ mili-giây.")
-    add_bullet(doc, "Triệt tiêu ảo giác thông tin (Zero Hallucination)", "Tích hợp kỹ thuật Tiêm tri thức học vụ ([AcademicFacts] Injection), Tái xếp hạng Cross-Encoder và Mô hình ngôn ngữ lớn (Google Gemini LLM) để sinh câu trả lời tiếng Việt chính xác 100% dựa trên quy chế và điểm số thực tế.")
+    add_bullet(doc, "Triệt tiêu ảo giác thông tin (Zero Hallucination)", "Tích hợp kỹ thuật Tiêm tri thức học vụ ([AcademicFacts] Injection), Tái xếp hạng Cross-Encoder và Mô hình ngôn ngữ lớn (Mô hình ngôn ngữ lớn (LLM)) để sinh câu trả lời tiếng Việt chính xác 100% dựa trên quy chế và điểm số thực tế.")
     add_bullet(doc, "Thiết kế và triển khai hệ thống Microservices hoàn chỉnh", "Xây dựng Frontend Web Chatbot Next.js thân thiện, hỗ trợ tra cứu môn đủ điều kiện, bảng điểm, kho tài liệu và trợ lý tương tác giọng nói trực tiếp (Live Voice).")
 
     add_heading_2(doc, "3. Đối tượng và phạm vi nghiên cứu")
@@ -51,7 +51,7 @@ def build_introduction_and_chapter_1(doc):
     add_p(doc, "Đề tài áp dụng phương pháp nghiên cứu kết hợp chặt chẽ giữa nghiên cứu lý thuyết nền tảng và phát triển thực nghiệm ứng dụng:")
     add_bullet(doc, "Cơ sở lý thuyết", "Hệ thống hóa các cơ sở lý thuyết chuẩn mực của môn học Trí tuệ nhân tạo, bao gồm lý thuyết tác tử thông minh, không gian trạng thái và thuật toán tìm kiếm, lập luận xác suất Bayes, các phương pháp học máy phân loại và kiến trúc RAG.")
     add_bullet(doc, "Xử lý dữ liệu", "Thu thập dữ liệu từ sổ tay sinh viên, khung chương trình đào tạo, tài liệu bài giảng CNTT; áp dụng kỹ thuật tiền xử lý văn bản tiếng Việt và phân đoạn văn bản đệ quy có độ chồng lấp.")
-    add_bullet(doc, "Triển khai mô hình AI", "Vector hóa văn bản với mô hình Vietnamese Sentence-BERT, lập chỉ mục trong Qdrant Vector DB, kết hợp Cross-Encoder Reranker và Google Gemini LLM.")
+    add_bullet(doc, "Triển khai mô hình AI", "Vector hóa văn bản với mô hình Vietnamese Sentence-BERT, lập chỉ mục trong Qdrant Vector DB, kết hợp Cross-Encoder Reranker và Mô hình ngôn ngữ lớn (LLM).")
     add_bullet(doc, "Phát triển hệ thống", "Xây dựng hệ thống theo mô hình kiến trúc Microservices độc lập (Auth Service :8001, Core Service :8000, UI Service :3000), Backend viết bằng Python FastAPI và PostgreSQL 15, Frontend viết bằng Next.js React.")
 
     add_heading_2(doc, "5. Cấu trúc báo cáo")
@@ -99,7 +99,7 @@ def build_introduction_and_chapter_1(doc):
     add_bullet(doc, "Mùa đông AI (1974 - 1980 & 1987 - 1993)", "Do giới hạn về năng lực phần cứng và kỳ vọng quá cao không đạt được, các quỹ đầu tư bị cắt giảm tạo nên các thời kỳ 'Mùa đông AI'.")
     add_bullet(doc, "Thời kỳ Hệ chuyên gia (1980 - 1987)", "Sự thành công vượt bậc của các Hệ chuyên gia thương mại (như R1/XCON của DEC, MYCIN trong y tế, DENDRAL trong hóa học) dựa trên tri thức chuyên gia và hệ luật sinh.")
     add_bullet(doc, "Kỷ nguyên Học máy và Học sâu (1993 - 2017)", "Sự trỗi dậy mạnh mẽ của Học máy (Machine Learning), Xử lý ngôn ngữ tự nhiên (NLP), Dữ liệu lớn (Big Data) và Mạng nơ-ron tích chập/tái hồi (CNN, RNN/LSTM).")
-    add_bullet(doc, "Kỷ nguyên LLMs và Kiến trúc RAG (2017 - nay)", "Kiến trúc Transformer (Vaswani et al., 2017) ra đời đã tạo ra cuộc cách mạng với các Mô hình ngôn ngữ lớn (Large Language Models - LLMs) như GPT, Gemini. Tuy nhiên, các mô hình ngôn ngữ lớn thuần túy gặp phải nhược điểm nghiêm trọng là hiện tượng ảo giác (hallucination) và không có khả năng cập nhật dữ liệu nội bộ riêng biệt. Do đó, kiến trúc Tạo sinh tăng cường truy xuất (Retrieval-Augmented Generation - RAG) ra đời như một giải pháp chuẩn mực, kết hợp sức mạnh truy hồi thông tin chính xác từ cơ sở dữ liệu chuyên ngành với năng lực sinh ngôn ngữ tự nhiên xuất sắc của LLM.")
+    add_bullet(doc, "Kỷ nguyên LLMs và Kiến trúc RAG (2017 - nay)", "Kiến trúc Transformer (Vaswani et al., 2017) ra đời đã tạo ra cuộc cách mạng với các Mô hình ngôn ngữ lớn (Large Language Models - LLMs) như GPT, Mô hình LLM. Tuy nhiên, các mô hình ngôn ngữ lớn thuần túy gặp phải nhược điểm nghiêm trọng là hiện tượng ảo giác (hallucination) và không có khả năng cập nhật dữ liệu nội bộ riêng biệt. Do đó, kiến trúc Tạo sinh tăng cường truy xuất (Retrieval-Augmented Generation - RAG) ra đời như một giải pháp chuẩn mực, kết hợp sức mạnh truy hồi thông tin chính xác từ cơ sở dữ liệu chuyên ngành với năng lực sinh ngôn ngữ tự nhiên xuất sắc của LLM.")
 
     add_heading_3(doc, "1.1.4 Các lĩnh vực nghiên cứu và ứng dụng chính của AI")
     add_p(doc, "Các lĩnh vực nghiên cứu cốt lõi của AI bao gồm:")
@@ -208,7 +208,7 @@ def build_introduction_and_chapter_1(doc):
     add_bullet(doc, "Học có giám sát (Supervised Learning)", "Huấn luyện trên tập dữ liệu đã biết trước cả đầu vào x và nhãn đầu ra y: D = {(x_i, y_i)}. Hai bài toán trọng tâm: Phân loại (Classification - nhãn rời rạc; thuật toán: Naive Bayes, SVM, Decision Tree, Random Forest, Logistic Regression, CNN) và Hồi quy (Regression - nhãn số thực liên tục; thuật toán: Linear Regression, Ridge/Lasso, SVR, XGBoost).")
     add_bullet(doc, "Học không giám sát (Unsupervised Learning)", "Tập dữ liệu chỉ chứa các quan sát đầu vào mà hoàn toàn không có nhãn mục tiêu. Các bài toán cốt lõi: Phân cụm dữ liệu (K-Means, DBSCAN, Hierarchical Clustering), Giảm số chiều dữ liệu (PCA, t-SNE, Autoencoder), Khai phá luật kết hợp (Apriori, FP-Growth) và Phát hiện điểm bất thường (Isolation Forest, One-Class SVM).")
     add_bullet(doc, "Học bán giám sát (Semi-supervised Learning)", "Kết hợp một tập nhỏ dữ liệu đã gắn nhãn D_L với một tập lớn dữ liệu chưa có nhãn D_U. Áp dụng kỹ thuật tự gán nhãn (Self-training / Pseudo-labeling) và Co-training nhằm tiết kiệm chi phí dán nhãn thủ công khổng lồ.")
-    add_bullet(doc, "Học tăng cường (Reinforcement Learning - RL)", "Thực thể học (Agent) tương tác thử - sai với môi trường theo Quy trình quyết định Markov (MDP) bao gồm 5 thành tố (S, A, P, R, γ). Mục tiêu tối thượng là tìm Chiến lược tối ưu π* để tối đa hóa Tổng phần thưởng tích lũy dài hạn. Thuật toán: Q-Learning, DQN, Policy Gradient, PPO, và đặc biệt là RLHF (Reinforcement Learning from Human Feedback) dùng để căn chỉnh các mô hình ngôn ngữ lớn như Gemini hay ChatGPT.")
+    add_bullet(doc, "Học tăng cường (Reinforcement Learning - RL)", "Thực thể học (Agent) tương tác thử - sai với môi trường theo Quy trình quyết định Markov (MDP) bao gồm 5 thành tố (S, A, P, R, γ). Mục tiêu tối thượng là tìm Chiến lược tối ưu π* để tối đa hóa Tổng phần thưởng tích lũy dài hạn. Thuật toán: Q-Learning, DQN, Policy Gradient, PPO, và đặc biệt là RLHF (Reinforcement Learning from Human Feedback) dùng để căn chỉnh các mô hình ngôn ngữ lớn như Mô hình LLM hay ChatGPT.")
 
     headers_ml_types = ["Phương pháp", "Bản chất dữ liệu", "Mục tiêu bài toán", "Thuật toán tiêu biểu", "Ứng dụng thực tiễn"]
     rows_ml_types = [
@@ -265,13 +265,13 @@ def build_introduction_and_chapter_1(doc):
     add_p(doc, "Quy trình truy hồi hai giai đoạn (Two-Stage Retrieval) trong hệ thống bao gồm:")
     add_bullet(doc, "Giai đoạn 1 - Bi-Encoder Retrieval", "Sử dụng vector embedding và Qdrant để lọc nhanh Top-20 đoạn văn bản có độ tương đồng Cosine cao nhất.")
     add_bullet(doc, "Giai đoạn 2 - Cross-Encoder Reranking", "Đưa câu hỏi và từng đoạn văn bản đồng thời vào mô hình Cross-Encoder để tính toán điểm tương thích ngữ cảnh sâu sắc (Relevance Score), từ đó sắp xếp lại và trích xuất Top-5 đoạn chất lượng nhất.")
-    add_bullet(doc, "Giai đoạn 3 - LLM Generation", "Tại giai đoạn sinh câu trả lời, hệ thống kết hợp System Prompt chuyên gia + Tiêm tri thức học vụ [AcademicFacts] + Lịch sử hội thoại + Top-5 đoạn văn bản ngữ cảnh được trích xuất + Câu hỏi sinh viên để gửi tới Google Gemini LLM API (gemini-1.5-flash / gemini-2.0-flash). Cơ chế này đảm bảo câu trả lời luôn bám sát tài liệu quy chế chính thức, có trích dẫn nguồn cụ thể và loại bỏ hoàn toàn hiện tượng ảo giác thông tin.")
+    add_bullet(doc, "Giai đoạn 3 - LLM Generation", "Tại giai đoạn sinh câu trả lời, hệ thống kết hợp System Prompt chuyên gia + Tiêm tri thức học vụ [AcademicFacts] + Lịch sử hội thoại + Top-5 đoạn văn bản ngữ cảnh được trích xuất + Câu hỏi sinh viên để gửi tới Mô hình ngôn ngữ lớn (LLM) API (Mô hình ngôn ngữ lớn tiên tiến (LLM)). Cơ chế này đảm bảo câu trả lời luôn bám sát tài liệu quy chế chính thức, có trích dẫn nguồn cụ thể và loại bỏ hoàn toàn hiện tượng ảo giác thông tin.")
 
     headers_rag_cmp = ["Phương pháp / Kỹ thuật", "Ưu điểm nổi bật", "Hạn chế chính", "Ứng dụng trong hệ thống"]
     rows_rag_cmp = [
         ["Mô hình TF-IDF & Keyword Matching", "Tốc độ tính toán nhanh, chi phí phần cứng thấp, chính xác với mã môn học.", "Không nắm bắt được từ đồng nghĩa và quan hệ ngữ nghĩa tiềm ẩn.", "Truy vấn nhanh mã môn học, tra cứu theo từ khóa chính xác."],
         ["Dense Embedding (Vietnamese-SBERT)", "Hiểu sâu sắc ngữ nghĩa tiếng Việt, không phụ thuộc mặt chữ, vector 768 chiều chuẩn hóa.", "Cần tài nguyên tính toán (CPU/GPU) để sinh vector nhúng.", "Giai đoạn 1 của RAG: Tìm kiếm Top-20 đoạn văn bản liên quan trong Qdrant."],
-        ["Cross-Encoder Reranker & LLM (Gemini)", "Đánh giá tương quan ngữ cảnh đa chiều chính xác tuyệt đối, sinh câu trả lời tự nhiên.", "Thời gian xử lý lâu hơn Bi-Encoder (~200ms rerank, ~1.5s LLM).", "Giai đoạn 2 của RAG: Lọc Top-5 đoạn tinh hoa và sinh câu trả lời hoàn chỉnh."]
+        ["Cross-Encoder Reranker & Mô hình LLM", "Đánh giá tương quan ngữ cảnh đa chiều chính xác tuyệt đối, sinh câu trả lời tự nhiên.", "Thời gian xử lý lâu hơn Bi-Encoder (~200ms rerank, ~1.5s LLM).", "Giai đoạn 2 của RAG: Lọc Top-5 đoạn tinh hoa và sinh câu trả lời hoàn chỉnh."]
     ]
     add_styled_table(doc, headers_rag_cmp, rows_rag_cmp, [1.6, 2.0, 1.5, 1.4], "Bảng 1.5: So sánh tổng quan các kỹ thuật phân loại và truy hồi văn bản")
 
@@ -297,7 +297,7 @@ def build_introduction_and_chapter_1(doc):
         ["Sentence-Transformers", "Deep Embedding Toolkit", "Tải và thực thi mô hình keepitreal/vietnamese-sbert để vector hóa văn bản và Cross-Encoder Reranker."],
         ["LangChain Text Splitters", "Text Chunking Toolkit", "Phân đoạn văn bản đệ quy tiếng Việt (chunk_size=1024, chunk_overlap=20) theo cấu trúc ngữ nghĩa."],
         ["PyPDF & python-docx", "Document Parser", "Trích xuất tự động toàn bộ nội dung văn bản từ các tệp giáo trình PDF, đề cương và tài liệu Word (.docx)."],
-        ["Google Generative AI", "Large Language Model (LLM)", "Tích hợp mô hình Gemini 1.5/2.0 Flash để tổng hợp ngữ cảnh RAG và sinh câu trả lời tiếng Việt chuẩn mực."],
+        ["Large Language Model (LLM) API", "Large Language Model (LLM)", "Tích hợp mô hình Mô hình LLM 1.5/2.0 Flash để tổng hợp ngữ cảnh RAG và sinh câu trả lời tiếng Việt chuẩn mực."],
         ["Next.js 14 & React", "Frontend Web Application", "Xây dựng giao diện tương tác người dùng đa thiết bị (Desktop & Mobile) thời gian thực qua REST API / SSE."]
     ]
     add_styled_table(doc, headers_infra, rows_infra, [1.8, 1.8, 2.9], "Bảng 1.6: Tổng hợp hạ tầng công nghệ và thư viện triển khai hệ thống")

@@ -133,7 +133,7 @@ def send_chat(page, question: str, timeout_ms: int = 90000) -> bool:
 def capture_student(browser) -> None:
     context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
     page = context.new_page()
-    login(page, "sv01@eau.edu.vn")
+    login(page, "sv01@eaut.edu.vn")
 
     page.goto(f"{BASE}/dashboard/chat", wait_until="domcontentloaded")
     wait_loaded(page, 1200)
@@ -197,7 +197,7 @@ def capture_student(browser) -> None:
 def capture_teacher(browser) -> None:
     context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
     page = context.new_page()
-    login(page, "gv01@eau.edu.vn")
+    login(page, "gv01@eaut.edu.vn")
 
     page.goto(f"{BASE}/dashboard", wait_until="domcontentloaded")
     wait_loaded(page, 1200)
@@ -250,7 +250,7 @@ def capture_teacher(browser) -> None:
 def capture_admin(browser) -> None:
     context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
     page = context.new_page()
-    login(page, "admin@eau.edu.vn")
+    login(page, "admin@eaut.edu.vn")
 
     page.goto(f"{BASE}/dashboard", wait_until="domcontentloaded")
     wait_loaded(page, 1500)

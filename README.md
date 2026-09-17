@@ -95,12 +95,12 @@ Hệ thống đã nạp sẵn khung chương trình đào tạo chuẩn của Kh
 
 | Email                 | Vai trò         | Họ và tên / Mô tả                                     | Mật khẩu  |
 | :-------------------- | :--------------- | :--------------------------------------------------------- | :---------- |
-| `admin@eau.edu.vn`  | Quản trị viên | Quản trị viên Khoa CNTT                                 | `Pass123` |
-| `gv01@eau.edu.vn`   | Giảng viên     | ThS. Nguyễn Văn An (Cố vấn học tập)                  | `Pass123` |
-| `sv01@eau.edu.vn`   | Sinh viên       | Lê Hải Đăng (SV năm 2 - có môn rớt cần học lại) | `Pass123` |
-| `sv_web@eau.edu.vn` | Sinh viên       | Trần Thị Mai (SV định hướng Lập trình Web)         | `Pass123` |
-| `sv_ai@eau.edu.vn`  | Sinh viên       | Phạm Văn Bình (SV định hướng Trí tuệ nhân tạo)  | `Pass123` |
-| `sv_new@eau.edu.vn` | Sinh viên       | Hoàng Gia Bảo (SV năm nhất mới nhập học)            | `Pass123` |
+| `admin@eaut.edu.vn`  | Quản trị viên | Quản trị viên Khoa CNTT                                 | `Pass123` |
+| `gv01@eaut.edu.vn`   | Giảng viên     | ThS. Nguyễn Văn An (Cố vấn học tập)                  | `Pass123` |
+| `sv01@eaut.edu.vn`   | Sinh viên       | Lê Hải Đăng (SV năm 2 - có môn rớt cần học lại) | `Pass123` |
+| `sv_web@eaut.edu.vn` | Sinh viên       | Trần Thị Mai (SV định hướng Lập trình Web)         | `Pass123` |
+| `sv_ai@eaut.edu.vn`  | Sinh viên       | Phạm Văn Bình (SV định hướng Trí tuệ nhân tạo)  | `Pass123` |
+| `sv_new@eaut.edu.vn` | Sinh viên       | Hoàng Gia Bảo (SV năm nhất mới nhập học)            | `Pass123` |
 
 ---
 
@@ -110,7 +110,7 @@ Hệ thống đã nạp sẵn khung chương trình đào tạo chuẩn của Kh
 
 - Docker và Docker Compose (hoặc Podman)
 - Node.js 18+ và Python 3.11+ (nếu chạy không qua Docker)
-- API Key Google Gemini (`GEMINI_API_KEY`)
+- API Key Mô hình ngôn ngữ lớn (LLM) (`GEMINI_API_KEY`)
 
 ### Bước 1: Sao chép dự án và cấu hình môi trường
 
@@ -120,7 +120,7 @@ cd it_student_chatbot
 
 # Tạo file .env từ file mẫu
 cp airc_internal_chatbot_core/.env.example airc_internal_chatbot_core/.env
-# Điền khóa GEMINI_API_KEY của bạn vào file .env
+# Điền khóa API Key của bạn vào file .env
 ```
 
 ### Bước 2: Khởi chạy toàn bộ hệ thống bằng Docker Compose
@@ -141,7 +141,7 @@ Hệ thống sẽ tự động khởi động các dịch vụ:
 ### Bước 3: Đăng nhập và trải nghiệm
 
 1. Truy cập `http://localhost:3000`
-2. Đăng nhập với tài khoản sinh viên `sv01@eau.edu.vn` / mật khẩu `Pass123`.
+2. Đăng nhập với tài khoản sinh viên `sv01@eaut.edu.vn` / mật khẩu `Pass123`.
 3. Thử đặt các câu hỏi:
    - *'Kỳ tới em được đăng ký những môn học nào?'*
    - *'Em muốn theo hướng Lập trình Web thì nên chọn môn gì?'*

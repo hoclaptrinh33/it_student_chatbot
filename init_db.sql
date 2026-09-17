@@ -6,9 +6,9 @@
 --   postgresql+asyncpg://it_admin:it_chatbot_2026@localhost:5432/it_student_chatbot
 --
 -- Tài khoản mẫu (mật khẩu Pass123, hash pbkdf2-sha256):
---   admin@eau.edu.vn
---   gv01@eau.edu.vn
---   sv01@eau.edu.vn
+--   admin@eaut.edu.vn
+--   gv01@eaut.edu.vn
+--   sv01@eaut.edu.vn
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -477,7 +477,7 @@ INSERT INTO users (id, email, hashed_password, full_name, role, student_code, de
 VALUES
     (
         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-        'admin@eau.edu.vn',
+        'admin@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Quản trị viên Khoa CNTT',
         'admin',
@@ -487,7 +487,7 @@ VALUES
     ),
     (
         'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-        'gv01@eau.edu.vn',
+        'gv01@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Nguyễn Văn An',
         'teacher',
@@ -497,7 +497,7 @@ VALUES
     ),
     (
         'cccccccc-cccc-cccc-cccc-cccccccccccc',
-        'sv01@eau.edu.vn',
+        'sv01@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Lê Hải Đăng',
         'student',
@@ -725,7 +725,7 @@ INSERT INTO users (id, email, hashed_password, full_name, role, student_code, de
 VALUES
     (
         '11111111-1111-1111-1111-111111111111',
-        'svweb@eau.edu.vn',
+        'svweb@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Trần Minh Quân',
         'student',
@@ -735,7 +735,7 @@ VALUES
     ),
     (
         '22222222-2222-2222-2222-222222222222',
-        'svai@eau.edu.vn',
+        'svai@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Đặng Thu Hà',
         'student',
@@ -745,7 +745,7 @@ VALUES
     ),
     (
         '33333333-3333-3333-3333-333333333333',
-        'svnew@eau.edu.vn',
+        'svnew@eaut.edu.vn',
         '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0',
         'Vũ Nhật Nam',
         'student',
@@ -915,17 +915,17 @@ ON CONFLICT (course_id, prerequisite_course_id, relation_type) DO NOTHING;
 
 INSERT INTO users (id, email, hashed_password, full_name, role, student_code, department, is_active)
 VALUES
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'gv_advisor@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'PGS.TS Trần Văn Hùng', 'teacher', NULL, 'Khoa CNTT', TRUE),
-    ('44444444-2401-4444-4444-000000000001', 'sv24_top@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Hoàng Minh Đức', 'student', '20240101', 'Khoa CNTT', TRUE),
-    ('44444444-2402-4444-4444-000000000002', 'sv24_warn@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Lê Quốc Tuấn', 'student', '20240102', 'Khoa CNTT', TRUE),
-    ('44444444-2301-4444-4444-000000000003', 'sv23_soft@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Đỗ Phương Linh', 'student', '20230201', 'Khoa CNTT', TRUE),
-    ('44444444-2302-4444-4444-000000000004', 'sv23_net@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Hải Nam', 'student', '20230202', 'Khoa CNTT', TRUE),
-    ('44444444-2303-4444-4444-000000000005', 'sv23_avg@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Phạm Ngọc Thảo', 'student', '20230203', 'Khoa CNTT', TRUE),
-    ('44444444-2201-4444-4444-000000000006', 'sv22_data@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Trần Gia Huy', 'student', '20220301', 'Khoa CNTT', TRUE),
-    ('44444444-2202-4444-4444-000000000007', 'sv22_warn@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Bùi Tiến Dũng', 'student', '20220302', 'Khoa CNTT', TRUE),
-    ('44444444-2203-4444-4444-000000000008', 'sv22_web@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Vũ Mai Phương', 'student', '20220303', 'Khoa CNTT', TRUE),
-    ('44444444-2101-4444-4444-000000000009', 'sv21_top@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Khắc Hưng', 'student', '20210401', 'Khoa CNTT', TRUE),
-    ('44444444-2102-4444-4444-000000000010', 'sv21_delay@eau.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Chu Thanh Tùng', 'student', '20210402', 'Khoa CNTT', TRUE)
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'gv_advisor@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'PGS.TS Trần Văn Hùng', 'teacher', NULL, 'Khoa CNTT', TRUE),
+    ('44444444-2401-4444-4444-000000000001', 'sv24_top@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Hoàng Minh Đức', 'student', '20240101', 'Khoa CNTT', TRUE),
+    ('44444444-2402-4444-4444-000000000002', 'sv24_warn@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Lê Quốc Tuấn', 'student', '20240102', 'Khoa CNTT', TRUE),
+    ('44444444-2301-4444-4444-000000000003', 'sv23_soft@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Đỗ Phương Linh', 'student', '20230201', 'Khoa CNTT', TRUE),
+    ('44444444-2302-4444-4444-000000000004', 'sv23_net@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Hải Nam', 'student', '20230202', 'Khoa CNTT', TRUE),
+    ('44444444-2303-4444-4444-000000000005', 'sv23_avg@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Phạm Ngọc Thảo', 'student', '20230203', 'Khoa CNTT', TRUE),
+    ('44444444-2201-4444-4444-000000000006', 'sv22_data@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Trần Gia Huy', 'student', '20220301', 'Khoa CNTT', TRUE),
+    ('44444444-2202-4444-4444-000000000007', 'sv22_warn@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Bùi Tiến Dũng', 'student', '20220302', 'Khoa CNTT', TRUE),
+    ('44444444-2203-4444-4444-000000000008', 'sv22_web@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Vũ Mai Phương', 'student', '20220303', 'Khoa CNTT', TRUE),
+    ('44444444-2101-4444-4444-000000000009', 'sv21_top@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Nguyễn Khắc Hưng', 'student', '20210401', 'Khoa CNTT', TRUE),
+    ('44444444-2102-4444-4444-000000000010', 'sv21_delay@eaut.edu.vn', '$pbkdf2-sha256$29000$nXgoJqKtQ46tAr7HNP03Qw$FQzXG8NwWKQCHTLFv4EMddCslaua8NRy5wEJUCB0Je0', 'Chu Thanh Tùng', 'student', '20210402', 'Khoa CNTT', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id)

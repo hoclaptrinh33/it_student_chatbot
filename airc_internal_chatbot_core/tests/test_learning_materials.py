@@ -85,7 +85,7 @@ def test_bind_material_api_persists_file_and_course_fields():
     app.dependency_overrides[get_current_user] = lambda: User(
         id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         user_id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-        email="teacher@eau.edu.vn",
+        email="teacher@eaut.edu.vn",
         full_name="teacher",
         role=UserRole.TEACHER,
         is_active=True,
@@ -127,7 +127,7 @@ def test_delete_material_api_success():
     app.dependency_overrides[get_current_user] = lambda: User(
         id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         user_id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-        email="teacher@eau.edu.vn",
+        email="teacher@eaut.edu.vn",
         full_name="teacher",
         role=UserRole.TEACHER,
         is_active=True,

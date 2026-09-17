@@ -28,7 +28,7 @@ def capture_teacher_filled() -> None:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
         page = context.new_page()
-        login(page, "gv01@eau.edu.vn")
+        login(page, "gv01@eaut.edu.vn")
 
         page.goto(f"{BASE}/dashboard/grades?student_id={SV001_ID}", wait_until="domcontentloaded")
         wait_loaded(page, 1800)
@@ -55,7 +55,7 @@ def capture_admin_detail() -> None:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
         page = context.new_page()
-        login(page, "admin@eau.edu.vn")
+        login(page, "admin@eaut.edu.vn")
 
         page.goto(f"{BASE}/admin/chatbots/{CHATBOT_ID}", wait_until="domcontentloaded")
         wait_loaded(page, 1500)
@@ -91,7 +91,7 @@ def capture_student_sources() -> None:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport=VIEWPORT, locale="vi-VN")
         page = context.new_page()
-        login(page, "sv01@eau.edu.vn")
+        login(page, "sv01@eaut.edu.vn")
         page.goto(f"{BASE}/dashboard/chat", wait_until="domcontentloaded")
         wait_loaded(page, 1200)
         # Open the latest conversation in sidebar

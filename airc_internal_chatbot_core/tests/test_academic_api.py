@@ -34,7 +34,7 @@ def _user(role: UserRole, user_id: str) -> User:
     return User(
         id=user_id,
         user_id=user_id,
-        email=f"{role.value}@eau.edu.vn",
+        email=f"{role.value}@eaut.edu.vn",
         full_name=role.value,
         role=role,
         is_active=True,

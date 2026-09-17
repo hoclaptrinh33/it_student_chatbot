@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 content_cover.py
-Xây dựng Trang bìa, Bìa phụ, Phân công nhiệm vụ, Lời cảm ơn, Danh mục từ viết tắt, Danh mục bảng biểu và hình vẽ.
+Xây dựng Trang bìa chuẩn giống hệt bản báo cáo gốc:
+- Trường ĐH Công nghệ Đông Á, Khoa CNTT
+- BÀI TẬP LỚN, HỌC PHẦN: TRÍ TUỆ NHÂN TẠO, MÃ ĐỀ TÀI: 32
+- TÊN ĐỀ TÀI: XÂY DỰNG CHƯƠNG TRÌNH HỎI ĐÁP BẰNG NGÔN NGỮ TỰ NHIÊN HỖ TRỢ CHỌN MÔN HỌC VÀ TÀI LIỆU HỌC TẬP CHO SINH VIÊN KHOA CNTT
+- LỚP TÍN CHỈ: TTNT.01.K14.08.LH.C01_LT, NHÓM THỰC HIỆN: NHÓM 15
+- Bảng danh sách 5 sinh viên ngay trên trang bìa
+- BẮC NINH - 2026
+Sau đó: Lời cảm ơn, Mục lục, Danh mục từ viết tắt.
 """
 
 import docx
@@ -12,108 +19,142 @@ from make_full_report import (
     add_bullet, add_styled_table
 )
 
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
 def build_cover_and_preamble(doc):
-    # TRANG BÌA CHÍNH
-    p_uni = doc.add_paragraph()
-    p_uni.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_uni.paragraph_format.space_before = Pt(0)
-    p_uni.paragraph_format.space_after = Pt(2)
-    r = p_uni.add_run("TRƯỜNG ĐẠI HỌC CÔNG NGHỆ ĐÔNG Á\nKHOA CÔNG NGHỆ THÔNG TIN")
-    set_run_font(r, FONT_NAME, 14, bold=True, color=BLACK)
-    
-    p_line = doc.add_paragraph()
-    p_line.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_line.paragraph_format.space_before = Pt(0)
-    p_line.paragraph_format.space_after = Pt(40)
-    r = p_line.add_run("--------------------***--------------------")
-    set_run_font(r, FONT_NAME, 12, bold=True, color=BLACK)
-    
-    p_btl = doc.add_paragraph()
-    p_btl.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_btl.paragraph_format.space_before = Pt(20)
-    p_btl.paragraph_format.space_after = Pt(12)
-    r = p_btl.add_run("BÀI TẬP LỚN\nHỌC PHẦN: TRÍ TUỆ NHÂN TẠO")
-    set_run_font(r, FONT_NAME, 16, bold=True, color=BLACK)
-    
-    p_de = doc.add_paragraph()
-    p_de.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_de.paragraph_format.space_before = Pt(6)
-    p_de.paragraph_format.space_after = Pt(16)
-    r = p_de.add_run("MÃ ĐỀ TÀI: 32")
-    set_run_font(r, FONT_NAME, 14, bold=True, color=BLACK)
-    
-    p_title = doc.add_paragraph()
-    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_title.paragraph_format.space_before = Pt(10)
-    p_title.paragraph_format.space_after = Pt(40)
-    p_title.paragraph_format.line_spacing = 1.3
-    r = p_title.add_run("ĐỀ TÀI:\nXÂY DỰNG CHƯƠNG TRÌNH HỎI ĐÁP BẰNG NGÔN NGỮ TỰ NHIÊN HỖ TRỢ CHỌN MÔN HỌC VÀ TÀI LIỆU HỌC TẬP CHO SINH VIÊN KHOA CNTT")
-    set_run_font(r, FONT_NAME, 17, bold=True, color=BLACK)
-    
-    p_meta = doc.add_paragraph()
-    p_meta.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    p_meta.paragraph_format.left_indent = Inches(1.5)
-    p_meta.paragraph_format.space_before = Pt(30)
-    p_meta.paragraph_format.space_after = Pt(60)
-    p_meta.paragraph_format.line_spacing = 1.3
-    
-    runs_meta = [
-        ("Giảng viên hướng dẫn: ", True), ("ThS. Nguyễn Văn An\n", False),
-        ("Lớp tín chỉ: ", True), ("TTNT.01.K14.08.LH.C01_LT\n", False),
-        ("Nhóm thực hiện: ", True), ("Nhóm 15\n", False),
-        ("Sinh viên đại diện: ", True), ("Lê Hải Đăng (MSV: 20233301)", False)
+    # =========================================================================
+    # TRANG BÌA CHÍNH (GIỐNG HỆT BẢN GỐC CỦA BÁO CÁO)
+    # =========================================================================
+    p0 = doc.add_paragraph()
+    p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p0.paragraph_format.space_before = Pt(10)
+    p0.paragraph_format.space_after = Pt(2)
+    p0.paragraph_format.line_spacing = 1.5
+    r0 = p0.add_run("TRƯỜNG ĐẠI HỌC CÔNG NGHỆ ĐÔNG Á")
+    set_run_font(r0, FONT_NAME, 14, bold=True, color=BLACK)
+
+    p1 = doc.add_paragraph()
+    p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p1.paragraph_format.space_before = Pt(0)
+    p1.paragraph_format.space_after = Pt(25)
+    p1.paragraph_format.line_spacing = 1.5
+    r1 = p1.add_run("KHOA CÔNG NGHỆ THÔNG TIN")
+    set_run_font(r1, FONT_NAME, 14, bold=True, color=BLACK)
+
+    p2 = doc.add_paragraph()
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p2.paragraph_format.space_before = Pt(0)
+    p2.paragraph_format.space_after = Pt(25)
+    p2.paragraph_format.line_spacing = 1.5
+
+    p3 = doc.add_paragraph()
+    p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p3.paragraph_format.space_before = Pt(15)
+    p3.paragraph_format.space_after = Pt(0)
+    p3.paragraph_format.line_spacing = 1.5
+    r3 = p3.add_run("BÀI TẬP LỚN")
+    set_run_font(r3, FONT_NAME, 20, bold=True, color=BLACK)
+
+    p4 = doc.add_paragraph()
+    p4.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p4.paragraph_format.space_before = Pt(4)
+    p4.paragraph_format.space_after = Pt(4)
+    r4 = p4.add_run("HỌC PHẦN: TRÍ TUỆ NHÂN TẠO")
+    set_run_font(r4, FONT_NAME, 14, bold=True, color=BLACK)
+
+    p5 = doc.add_paragraph()
+    p5.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p5.paragraph_format.space_before = Pt(4)
+    p5.paragraph_format.space_after = Pt(4)
+    r5 = p5.add_run("MÃ ĐỀ TÀI: 32")
+    set_run_font(r5, FONT_NAME, 14, bold=True, color=BLACK)
+
+    p6 = doc.add_paragraph()
+    p6.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p6.paragraph_format.space_before = Pt(4)
+    p6.paragraph_format.space_after = Pt(6)
+    p6.paragraph_format.line_spacing = 1.2
+    r6 = p6.add_run("TÊN ĐỀ TÀI: XÂY DỰNG CHƯƠNG TRÌNH HỎI ĐÁP BẰNG NGÔN NGỮ TỰ NHIÊN HỖ TRỢ CHỌN MÔN HỌC VÀ TÀI LIỆU HỌC TẬP CHO SINH VIÊN KHOA CNTT")
+    set_run_font(r6, FONT_NAME, 14, bold=True, color=BLACK)
+
+    p7 = doc.add_paragraph()
+    p7.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p7.paragraph_format.space_before = Pt(4)
+    p7.paragraph_format.space_after = Pt(12)
+    p7.paragraph_format.line_spacing = 1.2
+    r7 = p7.add_run("LỚP TÍN CHỈ: TTNT.01.K14.08.LH.C01_LT\nNHÓM THỰC HIỆN: NHÓM 15")
+    set_run_font(r7, FONT_NAME, 14, bold=True, color=BLACK)
+
+    # Bảng danh sách thành viên nhóm đặt ngay trên trang bìa (giống hệt bản gốc Table 0)
+    tbl_cover = doc.add_table(rows=6, cols=4)
+    tbl_cover.style = 'Table Grid'
+    tbl_cover.alignment = WD_TABLE_ALIGNMENT.CENTER
+    headers_cover = ["STT", "Mã sinh viên", "Sinh viên thực hiện", "Lớp hành chính"]
+    rows_cover = [
+        ["1", "20233301", "Lê Hải Đăng", "DCCNTT14.9"],
+        ["2", "20233302", "Lê Minh Quân", "DCCNTT14.9"],
+        ["3", "20233303", "Lê Xuân Đạt", "DCCNTT14.9"],
+        ["4", "20233304", "Lê Thanh Tùng", "DCCNTT14.9"],
+        ["5", "20233305", "Phạm Bảo Sơn", "DCCNTT14.9"]
     ]
-    for text, is_b in runs_meta:
-        r = p_meta.add_run(text)
-        set_run_font(r, FONT_NAME, 13, bold=is_b, color=BLACK)
-        
-    p_bot = doc.add_paragraph()
-    p_bot.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_bot.paragraph_format.space_before = Pt(30)
-    p_bot.paragraph_format.space_after = Pt(0)
-    r = p_bot.add_run("BẮC NINH - NĂM 2026")
-    set_run_font(r, FONT_NAME, 13, bold=True, color=BLACK)
-    
+    col_widths = [Inches(0.8), Inches(1.8), Inches(2.4), Inches(1.6)]
+    for i, h in enumerate(headers_cover):
+        c = tbl_cover.cell(0, i)
+        c.text = ""
+        p = c.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.space_before = Pt(3)
+        p.paragraph_format.space_after = Pt(3)
+        r = p.add_run(h)
+        set_run_font(r, FONT_NAME, 14, bold=True, color=BLACK)
+
+    for r_idx, r_data in enumerate(rows_cover):
+        for c_idx, val in enumerate(r_data):
+            c = tbl_cover.cell(r_idx + 1, c_idx)
+            c.text = ""
+            p = c.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(3)
+            p.paragraph_format.space_after = Pt(3)
+            r = p.add_run(val)
+            set_run_font(r, FONT_NAME, 14, bold=False, color=BLACK)
+
+    for row in tbl_cover.rows:
+        for c_idx, w in enumerate(col_widths):
+            row.cells[c_idx].width = w
+
+    p8 = doc.add_paragraph()
+    p8.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p8.paragraph_format.space_before = Pt(40)
+    p8.paragraph_format.space_after = Pt(0)
+    p8.paragraph_format.line_spacing = 1.5
+    r8 = p8.add_run("BẮC NINH - 2026")
+    set_run_font(r8, FONT_NAME, 14, bold=True, color=BLACK)
+
     doc.add_page_break()
-    
-    # TRANG PHỤ BÌA & PHÂN CÔNG NHIỆM VỤ
-    p_sub_title = doc.add_paragraph()
-    p_sub_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_sub_title.paragraph_format.space_before = Pt(10)
-    p_sub_title.paragraph_format.space_after = Pt(20)
-    r = p_sub_title.add_run("DANH SÁCH THÀNH VIÊN VÀ BẢNG PHÂN CÔNG NHIỆM VỤ")
-    set_run_font(r, FONT_NAME, 15, bold=True, color=BLACK)
-    
-    headers_members = ["STT", "Mã sinh viên", "Họ và tên", "Lớp", "Nhiệm vụ phân công", "Đánh giá"]
-    rows_members = [
-        ["1", "20233301", "Lê Hải Đăng", "DCCNTT14.9", "Nhóm trưởng, Thiết kế kiến trúc RAG, Backend FastAPI Core, CSDL Postgres, Tổng hợp báo cáo", "100% Hoàn thành xuất sắc"],
-        ["2", "20233302", "Lê Minh Quân", "DCCNTT14.9", "Nghiên cứu mô hình Vector Embedding, Qdrant Vector DB, Xử lý Text Chunking PDF", "100% Hoàn thành xuất sắc"],
-        ["3", "20233303", "Lê Xuân Đạt", "DCCNTT14.9", "Xây dựng dịch vụ Xác thực Auth Service (RBAC), Quản lý người dùng, Viết kịch bản test", "100% Hoàn thành xuất sắc"],
-        ["4", "20233304", "Lê Thanh Tùng", "DCCNTT14.9", "Phát triển giao diện Frontend Next.js (Chatbot, Bảng điểm, Kho tài liệu, Live Voice)", "100% Hoàn thành xuất sắc"],
-        ["5", "20233305", "Phạm Bảo Sơn", "DCCNTT14.9", "Thu thập dữ liệu khung môn học, đề cương syllabus PDF, Kiểm thử hệ thống và đo lường latency", "100% Hoàn thành xuất sắc"]
-    ]
-    add_styled_table(doc, headers_members, rows_members, [0.5, 1.1, 1.4, 1.0, 1.8, 1.2], "Bảng 0.1: Phân công nhiệm vụ và kết quả thực hiện của các thành viên Nhóm 15")
-    
-    doc.add_page_break()
-    
+
+    # =========================================================================
     # LỜI CẢM ƠN
+    # =========================================================================
     add_heading_1(doc, "LỜI CẢM ƠN")
     add_p(doc, "Để hoàn thành tốt bài tập lớn học phần Trí tuệ nhân tạo với đề tài “Xây dựng chương trình hỏi đáp bằng ngôn ngữ tự nhiên hỗ trợ chọn môn học và tài liệu học tập cho sinh viên khoa CNTT”, nhóm sinh viên chúng em xin được bày tỏ lòng biết ơn sâu sắc và chân thành nhất tới các thầy, cô giáo trong Khoa Công nghệ Thông tin - Trường Đại học Công nghệ Đông Á.")
     add_p(doc, "Đặc biệt, nhóm chúng em xin gửi lời cảm ơn trân trọng tới ThS. Nguyễn Văn An, giảng viên trực tiếp phụ trách giảng dạy và hướng dẫn học phần Trí tuệ nhân tạo. Trong suốt thời gian thực hiện nghiên cứu, thầy đã tận tình truyền đạt những kiến thức chuyên môn quý báu về Tác tử thông minh, Không gian trạng thái, Thuật toán tìm kiếm, Lập luận xác suất Bayes, Học máy và các kiến trúc AI hiện đại. Thầy cũng đã đưa ra những định hướng khoa học, góp ý sâu sắc và tạo mọi điều kiện thuận lợi nhất để nhóm có thể hiện thực hóa thành công sản phẩm từ lý thuyết sang ứng dụng thực tiễn.")
-    add_p(doc, "Mặc dù nhóm đã nỗ lực hết mình, chủ động nghiên cứu và áp dụng các công nghệ tiên tiến nhất như FastAPI, PostgreSQL 15, Qdrant Vector Database, Vietnamese-SBERT và Google Gemini LLM, song do phạm vi rộng của đề tài và giới hạn về mặt thời gian, bài báo cáo khó tránh khỏi những thiếu sót nhất định. Nhóm chúng em rất mong nhận được những nhận xét, đóng góp quý báu từ quý thầy cô và các bạn sinh viên để sản phẩm ngày càng hoàn thiện, có tính ứng dụng cao hơn nữa trong thực tiễn đào tạo của Nhà trường.")
+    add_p(doc, "Mặc dù nhóm đã nỗ lực hết mình, chủ động nghiên cứu và áp dụng các công nghệ tiên tiến nhất như FastAPI, PostgreSQL 15, Qdrant Vector Database, Vietnamese-SBERT và Mô hình ngôn ngữ lớn (LLM), song do phạm vi rộng của đề tài và giới hạn về mặt thời gian, bài báo cáo khó tránh khỏi những thiếu sót nhất định. Nhóm chúng em rất mong nhận được những nhận xét, đóng góp quý báu từ quý thầy cô và các bạn sinh viên để sản phẩm ngày càng hoàn thiện, có tính ứng dụng cao hơn nữa trong thực tiễn đào tạo của Nhà trường.")
     add_p(doc, "Chúng em xin chân thành cảm ơn!")
-    
+
     p_sign = doc.add_paragraph()
     p_sign.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_sign.paragraph_format.space_before = Pt(20)
     p_sign.paragraph_format.space_after = Pt(0)
-    r = p_sign.add_run("Bắc Ninh, tháng 09 năm 2026\nĐại diện Nhóm thực hiện\n\n\nLê Hải Đăng")
-    set_run_font(r, FONT_NAME, 13, bold=True, italic=True, color=BLACK)
-    
+    r_sign = p_sign.add_run("Bắc Ninh, tháng 09 năm 2026\nĐại diện Nhóm thực hiện\n\n\nLê Hải Đăng")
+    set_run_font(r_sign, FONT_NAME, 13, bold=True, italic=True, color=BLACK)
+
     doc.add_page_break()
-    
+
+    # =========================================================================
     # MỤC LỤC
-    add_heading_1(doc, "MỤC LỤC TỔNG QUAN")
+    # =========================================================================
+    add_heading_1(doc, "MỤC LỤC")
     toc_items = [
         ("PHẦN MỞ ĐẦU", "1"),
         ("1. Lý do chọn đề tài", "1"),
@@ -132,17 +173,17 @@ def build_cover_and_preamble(doc):
         ("2.1 Phát biểu bài toán", "33"),
         ("2.2 Xác định yêu cầu, Input và Output của hệ thống", "35"),
         ("2.3 Thiết kế sơ đồ khối và kiến trúc hệ thống", "38"),
-        ("2.4 Mô tả thuật toán và giải thuật xử lý cốt lõi", "42"),
-        ("2.5 Mô tả dữ liệu (Dataset) và Cơ sở tri thức", "48"),
-        ("2.6 Cài đặt hệ thống và Giao diện tương tác thực tế", "53"),
-        ("CHƯƠNG 3: THỰC NGHIỆM VÀ ĐÁNH GIÁ", "67"),
-        ("3.1 Môi trường thực nghiệm và triển khai", "67"),
-        ("3.2 Kịch bản kiểm thử chương trình với các trường hợp thực tế", "68"),
-        ("3.3 Đánh giá kết quả thực nghiệm", "73"),
-        ("3.4 Đánh giá ưu điểm và hạn chế của hệ thống", "76"),
-        ("PHẦN KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN", "78"),
-        ("TÀI LIỆU THAM KHẢO", "80"),
-        ("PHỤ LỤC: LIÊN KẾT MÃ NGUỒN GITHUB VÀ HƯỚNG DẪN DEMO", "82")
+        ("2.4 Mô tả thuật toán và giải thuật xử lý cốt lõi", "44"),
+        ("2.5 Mô tả dữ liệu (Dataset) và Cơ sở tri thức", "50"),
+        ("2.6 Cài đặt hệ thống và Hệ thống sơ đồ kỹ thuật & Giao diện tương tác", "55"),
+        ("CHƯƠNG 3: THỰC NGHIỆM VÀ ĐÁNH GIÁ", "72"),
+        ("3.1 Môi trường thực nghiệm và triển khai", "72"),
+        ("3.2 Kịch bản kiểm thử chương trình với các trường hợp thực tế", "73"),
+        ("3.3 Đánh giá kết quả thực nghiệm", "78"),
+        ("3.4 Đánh giá ưu điểm và hạn chế của hệ thống", "81"),
+        ("PHẦN KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN", "83"),
+        ("TÀI LIỆU THAM KHẢO", "85"),
+        ("PHỤ LỤC: LIÊN KẾT MÃ NGUỒN GITHUB VÀ HƯỚNG DẪN DEMO", "87")
     ]
     for title, page in toc_items:
         p_toc = doc.add_paragraph()
@@ -153,17 +194,18 @@ def build_cover_and_preamble(doc):
         r_t = p_toc.add_run(title)
         set_run_font(r_t, FONT_NAME, 12, bold=is_bold, color=BLACK)
         
-        # Dấu chấm tab dẫn trang
         dots_len = max(5, 75 - len(title))
         r_dots = p_toc.add_run(" " + "." * dots_len + " ")
         set_run_font(r_dots, FONT_NAME, 11, bold=False, color=BLACK)
         
         r_p = p_toc.add_run(page)
         set_run_font(r_p, FONT_NAME, 12, bold=is_bold, color=BLACK)
-        
+
     doc.add_page_break()
-    
+
+    # =========================================================================
     # DANH MỤC CÁC CHỮ VIẾT TẮT
+    # =========================================================================
     add_heading_1(doc, "DANH MỤC CÁC CHỮ VIẾT TẮT")
     abbr_headers = ["Ký hiệu viết tắt", "Thuật ngữ tiếng Anh", "Ý nghĩa tiếng Việt"]
     abbr_rows = [
@@ -173,9 +215,10 @@ def build_cover_and_preamble(doc):
         ["NLP", "Natural Language Processing", "Xử lý ngôn ngữ tự nhiên"],
         ["NLU", "Natural Language Understanding", "Hiểu ngôn ngữ tự nhiên"],
         ["ML", "Machine Learning", "Học máy"],
+        ["ERD", "Entity-Relationship Diagram", "Sơ đồ thực thể liên kết cơ sở dữ liệu"],
+        ["DAG", "Directed Acyclic Graph", "Đồ thị có hướng không chu trình"],
         ["BFS", "Breadth-First Search", "Thuật toán tìm kiếm theo chiều rộng"],
         ["DFS", "Depth-First Search", "Thuật toán tìm kiếm theo chiều sâu"],
-        ["DAG", "Directed Acyclic Graph", "Đồ thị có hướng không chu trình"],
         ["RBAC", "Role-Based Access Control", "Kiểm soát truy cập dựa trên vai trò"],
         ["API", "Application Programming Interface", "Giao diện lập trình ứng dụng"],
         ["JWT", "JSON Web Token", "Mã thông báo định danh Web JSON"],
@@ -190,5 +233,5 @@ def build_cover_and_preamble(doc):
         ["MLOps", "Machine Learning Operations", "Vận hành và quản lý vòng đời học máy"]
     ]
     add_styled_table(doc, abbr_headers, abbr_rows, [1.2, 2.5, 2.7], "Bảng 0.2: Danh mục các thuật ngữ và chữ viết tắt trong báo cáo")
-    
+
     doc.add_page_break()

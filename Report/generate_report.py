@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-make_full_report.py
-Tạo báo cáo BTL Trí tuệ nhân tạo toàn diện và chuẩn mực:
+generate_report.py
+Tạo báo cáo BTL Trí tuệ nhân tạo chuẩn mực học thuật:
 - Đề tài: XÂY DỰNG CHƯƠNG TRÌNH HỎI ĐÁP BẰNG NGÔN NGỮ TỰ NHIÊN HỖ TRỢ CHỌN MÔN HỌC VÀ TÀI LIỆU HỌC TẬP CHO SINH VIÊN KHOA CNTT
 - Font: Times New Roman 100%
 - Màu sắc: Chữ đen nền trắng (RGB 0, 0, 0)
@@ -11,10 +11,9 @@ Tạo báo cáo BTL Trí tuệ nhân tạo toàn diện và chuẩn mực:
 """
 
 import os
-import sys
 import docx
 from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn, nsdecls
@@ -28,6 +27,7 @@ def set_run_font(run, name=FONT_NAME, size_pt=13, bold=False, italic=False, colo
     run.font.bold = bold
     run.font.italic = italic
     run.font.color.rgb = color
+    # Đảm bảo bảng mã unicode hiển thị đúng font Times New Roman
     rPr = run._element.get_or_add_rPr()
     rFonts = OxmlElement('w:rFonts')
     rFonts.set(qn('w:ascii'), name)
@@ -51,7 +51,7 @@ def add_p(doc, text="", align=WD_ALIGN_PARAGRAPH.JUSTIFY, space_before=0, space_
 
 def add_heading_1(doc, text):
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(16)
+    p.paragraph_format.space_before = Pt(14)
     p.paragraph_format.space_after = Pt(6)
     p.paragraph_format.keep_with_next = True
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -61,7 +61,7 @@ def add_heading_1(doc, text):
 
 def add_heading_2(doc, text):
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(12)
+    p.paragraph_format.space_before = Pt(10)
     p.paragraph_format.space_after = Pt(4)
     p.paragraph_format.keep_with_next = True
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -71,7 +71,7 @@ def add_heading_2(doc, text):
 
 def add_heading_3(doc, text):
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_before = Pt(6)
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.keep_with_next = True
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -105,10 +105,10 @@ def set_table_borders(table):
             f'<w:tblBorders {nsdecls("w")}>\n'
             f'  <w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
             f'  <w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
-            f'  <w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
-            f'  <w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
-            f'  <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
-            f'  <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
+            f'  <w:insideH w:val="single" w:sz="4" w:space="0" w:color="CCCCCC"/>\n'
+            f'  <w:insideV w:val="none"/>\n'
+            f'  <w:left w:val="none"/>\n'
+            f'  <w:right w:val="none"/>\n'
             f'</w:tblBorders>'
         )
         tblPr[0].append(borders)
@@ -136,7 +136,8 @@ def add_styled_table(doc, headers, rows, col_widths=None, caption=""):
         p.paragraph_format.space_after = Pt(4)
         r = p.add_run(h_text)
         set_run_font(r, FONT_NAME, 11, bold=True, color=BLACK)
-        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFFFFF"/>')
+        # Background xám rất nhạt cho header
+        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="F0F0F0"/>')
         hdr_cells[i]._element.get_or_add_tcPr().append(shd)
         
     # Data rows
@@ -150,9 +151,8 @@ def add_styled_table(doc, headers, rows, col_widths=None, caption=""):
             p.paragraph_format.space_after = Pt(3)
             r = p.add_run(str(val))
             set_run_font(r, FONT_NAME, 11, bold=False, color=BLACK)
-            shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFFFFF"/>')
-            row_cells[c_idx]._element.get_or_add_tcPr().append(shd)
             
+    # Set col widths
     if col_widths and len(col_widths) == len(headers):
         for row in table.rows:
             for c_idx, w in enumerate(col_widths):
@@ -196,17 +196,18 @@ def add_code_snippet(doc, code_str, caption=""):
     cell = table.rows[0].cells[0]
     cell.width = Inches(6.0)
     
+    # Border
     tcPr = cell._element.get_or_add_tcPr()
     borders = parse_xml(
         f'<w:tcBorders {nsdecls("w")}>\n'
-        f'  <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
-        f'  <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
+        f'  <w:top w:val="single" w:sz="4" w:space="0" w:color="888888"/>\n'
+        f'  <w:bottom w:val="single" w:sz="4" w:space="0" w:color="888888"/>\n'
         f'  <w:left w:val="single" w:sz="12" w:space="0" w:color="000000"/>\n'
-        f'  <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>\n'
+        f'  <w:right w:val="single" w:sz="4" w:space="0" w:color="888888"/>\n'
         f'</w:tcBorders>'
     )
     tcPr.append(borders)
-    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FFFFFF"/>')
+    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="FAFAFA"/>')
     tcPr.append(shd)
     
     cell.text = ""
@@ -217,10 +218,10 @@ def add_code_snippet(doc, code_str, caption=""):
         p.paragraph_format.space_after = Pt(1)
         p.paragraph_format.line_spacing = 1.0
         r = p.add_run(line)
-        set_run_font(r, FONT_NAME, 10, False, False, BLACK)
+        set_run_font(r, 'Consolas', 9.5, False, False, BLACK)
         
     p_after = doc.add_paragraph()
     p_after.paragraph_format.space_before = Pt(2)
     p_after.paragraph_format.space_after = Pt(6)
 
-print("Setup completed. Ready to build full report.")
+print("Helper functions defined successfully")

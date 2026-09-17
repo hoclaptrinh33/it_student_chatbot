@@ -311,7 +311,7 @@ export default function StudentProfilePage() {
                                         />
 
                                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-600">
-                                            <div><strong>Hỗ trợ kỹ thuật Khoa CNTT:</strong> fit@eau.edu.vn</div>
+                                            <div><strong>Hỗ trợ kỹ thuật Khoa CNTT:</strong> fit@eaut.edu.vn</div>
                                             <div><strong>Thời gian tiếp nhận:</strong> Thứ Hai – Thứ Sáu (8:00 – 17:00)</div>
                                         </div>
                                     </div>

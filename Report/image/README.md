@@ -1,6 +1,6 @@
 # Ảnh giao diện hệ thống — dùng cho báo cáo
 
-Chụp từ bản chạy local `http://localhost:3000` (tài khoản mẫu `sv01@eau.edu.vn`, `gv01@eau.edu.vn`, `admin@eau.edu.vn`).
+Chụp từ bản chạy local `http://localhost:3000` (tài khoản mẫu `sv01@eaut.edu.vn`, `gv01@eaut.edu.vn`, `admin@eaut.edu.vn`).
 
 Gợi ý chèn vào **Chương 2.4 Xây dựng chương trình và Giao diện tương tác**.
 

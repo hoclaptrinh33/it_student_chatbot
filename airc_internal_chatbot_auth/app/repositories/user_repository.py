@@ -69,7 +69,7 @@ class UserRepository(BaseRepository):
         if not clean:
             return None
         if clean.lower().endswith("@fit.edu.vn"):
-            clean = clean[:-11] + "@eau.edu.vn"
+            clean = clean[:-11] + "@eaut.edu.vn"
 
         # 1. Exact / case-insensitive email match
         result = await self.session.execute(
@@ -87,9 +87,9 @@ class UserRepository(BaseRepository):
         if user:
             return self.serialize_row(user)
 
-        # 3. Username match with @eau.edu.vn (e.g. 'admin', 'gv01', 'sv01')
+        # 3. Username match with @eaut.edu.vn (e.g. 'admin', 'gv01', 'sv01')
         if "@" not in clean:
-            candidate = f"{clean.lower()}@eau.edu.vn"
+            candidate = f"{clean.lower()}@eaut.edu.vn"
             result = await self.session.execute(
                 select(User).where(func.lower(User.email) == candidate)
             )

@@ -19,7 +19,7 @@ class FakeUsers:
         self.users = {
             "cccccccc-cccc-cccc-cccc-cccccccccccc": {
                 "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-                "email": "sv01@eau.edu.vn",
+                "email": "sv01@eaut.edu.vn",
                 "hashed_password": "old",
             }
         }
@@ -51,7 +51,7 @@ def _session_returning(row):
 async def test_reset_unknown_email_is_silent():
     session = _session_returning(None)
     service = PasswordResetService(session, FakeUsers(), hash_password=lambda p: f"h:{p}")
-    await service.request_reset("nobody@eau.edu.vn")
+    await service.request_reset("nobody@eaut.edu.vn")
     session.add.assert_not_called()
 
 
