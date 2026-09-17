@@ -1,0 +1,103 @@
+erDiagram
+    USERS {
+        uuid id PK
+        string email UK
+        string full_name
+        string student_id UK
+        string class_name
+        string major
+        boolean is_active
+    }
+    ROLES {
+        uuid id PK
+        string name UK
+        string description
+    }
+    PERMISSIONS {
+        uuid id PK
+        string code UK
+        string name
+    }
+    USER_ROLES {
+        uuid user_id PK,FK
+        uuid role_id PK,FK
+    }
+    ROLE_PERMISSIONS {
+        uuid role_id PK,FK
+        uuid permission_id PK,FK
+    }
+    COURSES {
+        uuid id PK
+        string course_code UK
+        string name
+        int credits
+        int semester
+        string course_type
+        string career_track
+    }
+    COURSE_PREREQUISITES {
+        uuid id PK
+        uuid course_id FK
+        uuid prerequisite_course_id FK
+        string prereq_type
+    }
+    STUDENT_ACADEMIC_RECORDS {
+        uuid id PK
+        uuid student_id FK
+        uuid course_id FK
+        string score_letter
+        numeric score_number
+        string status
+        string academic_year
+    }
+    LEARNING_MATERIALS {
+        uuid id PK
+        string title
+        string course_code
+        string material_type
+        string author
+        string file_path
+    }
+    CHATBOTS {
+        uuid id PK
+        string name
+        text system_prompt
+        string model_name
+        boolean is_active
+    }
+    DATASETS {
+        uuid id PK
+        string name
+        string collection_name
+        int total_chunks
+    }
+    CHAT_SESSIONS {
+        uuid id PK
+        uuid user_id FK
+        uuid chatbot_id FK
+        string title
+    }
+    CHAT_MESSAGES {
+        uuid id PK
+        uuid session_id FK
+        string sender_role
+        text content
+    }
+
+    USERS ||--o{ USER_ROLES : "has_role"
+    ROLES ||--o{ USER_ROLES : "assigned_to"
+    ROLES ||--o{ ROLE_PERMISSIONS : "grants"
+    PERMISSIONS ||--o{ ROLE_PERMISSIONS : "defines"
+
+    USERS ||--o{ STUDENT_ACADEMIC_RECORDS : "earns"
+    COURSES ||--o{ STUDENT_ACADEMIC_RECORDS : "evaluated_in"
+
+    COURSES ||--o{ COURSE_PREREQUISITES : "requires"
+    COURSES ||--o{ COURSE_PREREQUISITES : "prerequisite_of"
+
+    COURSES ||--o{ LEARNING_MATERIALS : "references"
+
+    USERS ||--o{ CHAT_SESSIONS : "owns"
+    CHATBOTS ||--o{ CHAT_SESSIONS : "serves"
+    CHAT_SESSIONS ||--o{ CHAT_MESSAGES : "contains"
+    CHATBOTS ||--o{ DATASETS : "links_knowledge"

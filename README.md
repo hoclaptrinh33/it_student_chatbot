@@ -81,6 +81,8 @@ Hệ thống được xây dựng theo mô hình **Microservices**:
                                                                 └─────────────────────────────┘
 ```
 
+> 📐 **Hệ thống sơ đồ kỹ thuật (Mermaid Diagrams)**: Xem chi tiết mã nguồn Mermaid và hình ảnh tương tác của toàn bộ 6 sơ đồ (ERD CSDL PostgreSQL 15, Kiến trúc Microservices, Luồng Hybrid RAG, Đồ thị DAG tiên quyết, Use Case, Sequence Diagram) tại tài liệu [DIAGRAMS.md](DIAGRAMS.md).
+
 ---
 
 ## 📊 4. Dữ Liệu Học Vụ Mẫu (Seed Data)

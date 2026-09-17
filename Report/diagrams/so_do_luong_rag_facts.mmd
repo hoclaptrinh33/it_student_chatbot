@@ -1,0 +1,28 @@
+flowchart TD
+    START(["Sinh viên gửi câu hỏi tự nhiên<br/>Ví dụ: 'Kỳ tới em được học môn gì?'"]) --> AUTH{"Xác thực JWT Token &<br/>Trích xuất student_id"}
+    
+    AUTH -->|"Hợp lệ"| CACHE{"Kiểm tra Semantic Cache<br/>(User-isolated Cache Key)"}
+    AUTH -->|"Không hợp lệ"| ERR["Trả mã lỗi 401 Unauthorized"]
+    
+    CACHE -->|"Hit (Khoảng cách Cosine nhỏ hơn 0.08)"| HIT_RESP["Trả câu trả lời từ Cache tức thì<br/>(Độ trễ dưới 100ms)"]
+    CACHE -->|"Miss"| INTENT["Intent Classifier<br/>Phân tích ý định & Trích xuất thực thể"]
+
+    INTENT --> BRANCH{"Loại ý định người dùng"}
+
+    BRANCH -->|"COURSE_ADVICE<br/>(Tư vấn môn học)"| PATH_ACAD["1. Truy vấn Hàm SQL PostgreSQL 15<br/>fn_student_eligible_courses(student_id)<br/>Duyệt đồ thị DAG môn học tiên quyết"]
+    BRANCH -->|"MATERIAL_QA<br/>(Hỏi đáp tài liệu)"| PATH_MAT["2. Nhúng câu hỏi bằng Vietnamese-SBERT<br/>Vector Search Qdrant Top-20<br/>Rerank Top-5 chunks chuẩn"]
+    BRANCH -->|"HYBRID / GENERAL<br/>(Hỗn hợp)"| PATH_HYBRID["3. Thực thi song song cả 2 nhánh:<br/>Truy vấn SQL Facts + Vector Search"]
+
+    PATH_ACAD --> FACTS["Đóng gói Tri thức học vụ xác thực<br/>AcademicFacts: Môn đủ điều kiện, Luật tiên quyết, Điểm GPA"]
+    PATH_MAT --> CHUNKS["Trích xuất Đoạn văn bản tinh hoa<br/>RetrievedDocs: Giáo trình, Đề cương, Slide bài giảng"]
+    PATH_HYBRID --> FACTS
+    PATH_HYBRID --> CHUNKS
+
+    FACTS --> PROMPT["Ghép Prompt chuẩn mực:<br/>System Instruction + AcademicFacts + RetrievedDocs + Lịch sử hội thoại"]
+    CHUNKS --> PROMPT
+
+    PROMPT --> LLM["Mô hình ngôn ngữ lớn (LLM)<br/>Sinh phản hồi tự nhiên theo phong cách cố vấn học tập<br/>(Quy tắc: Tuyệt đối không bịa đặt môn học, zero hallucination)"]
+
+    LLM --> STREAM["Truyền luồng dữ liệu thời gian thực (SSE Streaming)<br/>Kèm thẻ tải tài liệu và trích dẫn nguồn"]
+    STREAM --> SAVE["Lưu lịch sử vào PostgreSQL & Cập nhật Semantic Cache Redis"]
+    SAVE --> END_NODE(["Sinh viên nhận câu trả lời hoàn chỉnh"])

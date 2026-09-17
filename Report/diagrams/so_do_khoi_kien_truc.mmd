@@ -1,0 +1,58 @@
+flowchart TB
+    subgraph CLIENT_TIER["1. TẦNG NGƯỜI DÙNG & THIẾT BỊ (PRESENTATION TIER)"]
+        direction LR
+        SV["Sinh viên Khoa CNTT<br/>(Tra cứu môn, tài liệu, Live Voice)"]
+        GV["Giảng viên / Cố vấn học tập<br/>(Xem tiến độ lớp, quản lý tài liệu)"]
+        AD["Quản trị viên (Admin)<br/>(Quản lý hệ thống, RBAC, CSDL)"]
+        WEB["Ứng dụng Web Next.js 14 Responsive<br/>(Port :3000 - SSR, TailwindCSS, Audio Visualizer)"]
+        SV --> WEB
+        GV --> WEB
+        AD --> WEB
+    end
+
+    subgraph API_TIER["2. TẦNG DỊCH VỤ MICROSERVICES (BACKEND APIS)"]
+        direction TB
+        subgraph AUTH_SVC["Auth Service (FastAPI - Port :8001)"]
+            AUTH_API["REST Endpoints: /api/v1/auth<br/>(Login, Register, Refresh, Forgot Password)"]
+            RBAC_ENG["RBAC Engine & JWT Token Signer<br/>(PBKDF2 Password Hasher)"]
+            AUTH_API --> RBAC_ENG
+        end
+
+        subgraph CORE_SVC["Core Chatbot Service (FastAPI - Port :8000)"]
+            CORE_API["API Gateway & Controllers<br/>(/chat, /academic, /materials, /voice)"]
+            INTENT_CLF["Bộ phân loại ý định (Intent Classifier)<br/>COURSE_ADVICE | MATERIAL_QA | HYBRID"]
+            RAG_ENG["Hybrid RAG & Facts Injection Engine<br/>(Semantic Cache, Context Assembler)"]
+            VOICE_ENG["Live Voice Engine<br/>(STT Whisper / TTS Audio Streaming)"]
+            CORE_API --> INTENT_CLF
+            INTENT_CLF --> RAG_ENG
+            CORE_API --> VOICE_ENG
+        end
+    end
+
+    subgraph DATA_TIER["3. TẦNG LƯU TRỮ VÀ TÌM KIẾM DỮ LIỆU (DATA ENGINES)"]
+        direction LR
+        PG[("PostgreSQL 15 (Port :5432)<br/>- Users, Roles, RBAC<br/>- 23 Courses, DAG Prerequisites<br/>- Academic Records, Materials<br/>- Function: fn_student_eligible_courses")]
+        QD[("Qdrant Vector DB (Port :6333)<br/>- Collection: it_materials<br/>- Vector Dense 768 dims (HNSW)<br/>- Semantic Payload Metadata")]
+        RD[("Redis Memory Cache (Port :6379)<br/>- User Session Tokens<br/>- Per-user Semantic Cache")]
+    end
+
+    subgraph AI_TIER["4. TẦNG TRÍ TUỆ NHÂN TẠO & MÔ HÌNH NGÔN NGỮ (AI ENGINES)"]
+        direction LR
+        SBERT["Vietnamese-SBERT<br/>(Embedding 768 chiều tiếng Việt)"]
+        RERANK["Cross-Encoder Reranker<br/>(Tái xếp hạng Top-5 chunks)"]
+        LLM["Mô hình ngôn ngữ lớn (LLM)<br/>(Prompt Assembly, Fact Injection, Streaming)"]
+    end
+
+    WEB -->|"HTTP REST / JWT"| AUTH_API
+    WEB -->|"HTTP REST / Server-Sent Events"| CORE_API
+
+    AUTH_SVC -->|"SQLAlchemy ORM"| PG
+    AUTH_SVC -->|"Cache Tokens"| RD
+
+    CORE_SVC -->|"SQL Query & DAG Function"| PG
+    CORE_SVC -->|"ANN Vector Search"| QD
+    CORE_SVC -->|"Semantic Caching"| RD
+
+    RAG_ENG -->|"Text Vectorization"| SBERT
+    RAG_ENG -->|"Precision Reranking"| RERANK
+    RAG_ENG -->|"Prompt + AcademicFacts"| LLM

@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor SV as Sinh viên (Client)
+    participant UI as Next.js Web App (:3000)
+    participant API as Core Service FastAPI (:8000)
+    participant PG as PostgreSQL 15 (:5432)
+    participant QD as Qdrant Vector DB (:6333)
+    participant LLM as Mô hình ngôn ngữ lớn (LLM)
+
+    SV->>+UI: Nhập câu hỏi: "Kỳ tới em được học môn nào?"
+    UI->>+API: POST /api/v1/chat/message (Kèm JWT Bearer Token)
+
+    API->>API: Xác thực JWT & Trích xuất student_id = 20233301
+    API->>API: Intent Classifier: Nhận diện ý định = COURSE_ADVICE
+
+    critical Truy xuất tri thức học vụ chính xác
+        API->>+PG: SELECT * FROM fn_student_eligible_courses('20233301')
+        Note over PG: Duyệt đồ thị DAG môn tiên quyết &<br/>Lọc các môn đã qua (PASSED), tìm môn đủ điều kiện
+        PG-->>-API: Danh sách 4 môn đủ điều kiện (Mã, Tên, Tín chỉ, Lý do)
+    end
+
+    opt Khi câu hỏi yêu cầu thêm tài liệu hoặc giáo trình
+        API->>+QD: Vector Search Cosine(query_vector, collection='it_materials', top_k=5)
+        QD-->>-API: Top 5 đoạn văn bản đề cương chi tiết (Syllabus Chunks)
+    end
+
+    API->>API: Đóng gói Prompt:<br/>System Prompt + AcademicFacts + Retrieved Chunks
+
+    API->>+LLM: Gửi Prompt hoàn chỉnh tới LLM
+    Note over LLM: Sinh câu trả lời tự nhiên theo vai trò cố vấn,<br/>cam kết chính xác theo AcademicFacts (Zero Hallucination)
+    LLM-->>-API: Phản hồi từng phần (Streaming Tokens)
+
+    API-->>-UI: SSE Event Stream (text tokens + source citations)
+    UI-->>-SV: Hiển thị phản hồi tức thì trên giao diện Chatbot
+    
+    API->>PG: INSERT INTO chat_messages (session_id, sender_role, content)
