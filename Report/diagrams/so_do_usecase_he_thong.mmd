@@ -1,44 +1,56 @@
-flowchart LR
-    subgraph ACTORS["TÁC NHÂN HỆ THỐNG"]
-        direction TB
+flowchart TB
+    subgraph ACTORS["CÁC TÁC NHÂN HỆ THỐNG (ACTORS)"]
+        direction LR
         SV["🎓 Sinh viên (Student)"]
         GV["👨‍🏫 Giảng viên / Cố vấn (Teacher)"]
         AD["⚙️ Quản trị viên (Admin)"]
     end
 
-    subgraph SYSTEM["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT"]
+    subgraph SYSTEM["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT (AIRC CHATBOT)"]
         direction TB
-        
-        subgraph UC_AUTH["Xác thực & Hồ sơ cá nhân"]
-            UC1["Đăng nhập / Đăng ký hệ thống"]
-            UC2["Quên mật khẩu / Đặt lại mật khẩu"]
-            UC3["Xem và cập nhật thông tin hồ sơ"]
+
+        subgraph ROW1["PHÂN HỆ TRUY CẬP VÀ NGHIỆP VỤ SINH VIÊN"]
+            direction LR
+            subgraph G1["1. Xác thực & Hồ sơ"]
+                direction TB
+                UC1(["Đăng nhập / Đăng ký"])
+                UC2(["Quên & Đặt lại mật khẩu"])
+                UC3(["Xem & Cập nhật hồ sơ"])
+            end
+            subgraph G2["2. Trợ lý Cố vấn Học vụ Sinh viên"]
+                direction TB
+                UC4(["Hỏi đáp quy chế & Lộ trình đào tạo"])
+                UC5(["Tra cứu môn học đủ điều kiện"])
+                UC6(["Tra cứu điểm & Môn cần học lại"])
+                UC7(["Tìm kiếm & Tải tài liệu PDF"])
+                UC8(["Tương tác giọng nói Live Voice"])
+            end
         end
 
-        subgraph UC_STUDENT["Chức năng Dành cho Sinh viên"]
-            UC4["Hỏi đáp quy chế & Lộ trình học tập"]
-            UC5["Tra cứu môn học đủ điều kiện đăng ký"]
-            UC6["Tra cứu bảng điểm cá nhân & Điểm rớt"]
-            UC7["Tìm kiếm và tải tài liệu môn học (PDF)"]
-            UC8["Tương tác thời gian thực bằng giọng nói (Live Voice)"]
-        end
-
-        subgraph UC_TEACHER["Chức năng Dành cho Giảng viên"]
-            UC9["Tra cứu tiến độ học tập sinh viên theo lớp"]
-            UC10["Xem trực quan hóa sơ đồ môn tiên quyết"]
-            UC11["Đóng góp và quản lý tài liệu học tập"]
-            UC12["Hỏi đáp trợ lý chuyên môn AI"]
-        end
-
-        subgraph UC_ADMIN["Chức năng Quản trị Hệ thống"]
-            UC13["Quản trị người dùng & Phân quyền RBAC"]
-            UC14["Quản lý danh mục 23 môn học & Đồ thị DAG"]
-            UC15["Nhập liệu & Cập nhật bảng điểm sinh viên"]
-            UC16["Quản lý kho tri thức Vector & Tệp Syllabus"]
-            UC17["Cấu hình tham số RAG Pipeline & Mô hình LLM"]
+        subgraph ROW2["PHÂN HỆ GIẢNG VIÊN VÀ QUẢN TRỊ VIÊN"]
+            direction LR
+            subgraph G3["3. Nghiệp vụ Giảng viên / Cố vấn"]
+                direction TB
+                UC9(["Xem tiến độ học tập sinh viên"])
+                UC10(["Xem trực quan sơ đồ DAG tiên quyết"])
+                UC11(["Quản lý & Đóng góp tài liệu"])
+                UC12(["Hỏi đáp trợ lý chuyên môn AI"])
+            end
+            subgraph G4["4. Nghiệp vụ Quản trị Hệ thống (Admin)"]
+                direction TB
+                UC13(["Quản trị người dùng & Phân quyền RBAC"])
+                UC14(["Quản lý 23 môn học & Cây tiên quyết"])
+                UC15(["Nhập liệu & Cập nhật bảng điểm"])
+                UC16(["Quản trị kho tri thức Vector Qdrant"])
+                UC17(["Cấu hình tham số RAG Pipeline & LLM"])
+            end
         end
     end
 
+    ACTORS ~~~ SYSTEM
+    ROW1 ~~~ ROW2
+
+    %% Liên kết Sinh viên
     SV --> UC1
     SV --> UC2
     SV --> UC3
@@ -48,6 +60,7 @@ flowchart LR
     SV --> UC7
     SV --> UC8
 
+    %% Liên kết Giảng viên
     GV --> UC1
     GV --> UC3
     GV --> UC9
@@ -55,6 +68,7 @@ flowchart LR
     GV --> UC11
     GV --> UC12
 
+    %% Liên kết Quản trị viên
     AD --> UC1
     AD --> UC3
     AD --> UC13

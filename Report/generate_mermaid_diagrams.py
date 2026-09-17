@@ -236,123 +236,129 @@ RAG_FLOW_MERMAID = """flowchart TD
 # =============================================================================
 # 4. SƠ ĐỒ ĐỒ THỊ CÓ HƯỚNG KHÔNG CHU TRÌNH (DAG) MÔN TIÊN QUYẾT
 # =============================================================================
-DAG_PREREQ_MERMAID = """flowchart LR
-    subgraph K1["HỌC KỲ 1"]
-        direction TB
-        K1_DSTT["Đại số tuyến tính<br/>(3 TC)"]
-        K1_GT1["Giải tích 1<br/>(3 TC)"]
-        K1_THDC["Tin học đại cương<br/>(3 TC)"]
-        K1_ENG1["Tiếng Anh 1<br/>(3 TC)"]
-        K1_TRIET["Triết học Mác-Lênin<br/>(3 TC)"]
+DAG_PREREQ_MERMAID = """flowchart TB
+    subgraph K1["HỌC KỲ 1 (ĐẠI CƯƠNG)"]
+        K1_GT1["Giải tích 1 (3 TC)"]
+        K1_THDC["Tin học đại cương (3 TC)"]
+        K1_DSTT["Đại số tuyến tính (3 TC)"]
+        K1_ENG1["Tiếng Anh 1 (3 TC)"]
+        K1_TRIET["Triết học Mác-Lênin (3 TC)"]
     end
 
-    subgraph K2["HỌC KỲ 2"]
-        direction TB
-        K2_GT2["Giải tích 2<br/>(3 TC)"]
-        K2_PHYS["Vật lý đại cương<br/>(3 TC)"]
-        K2_NMLT["Nhập môn lập trình<br/>(INT1101 - 3 TC)"]
-        K2_CTRR["Cấu trúc rời rạc<br/>(INT1103 - 3 TC)"]
-        K2_ENG2["Tiếng Anh 2<br/>(3 TC)"]
+    subgraph K2["HỌC KỲ 2 (CƠ SỞ)"]
+        K2_GT2["Giải tích 2 (3 TC)"]
+        K2_NMLT["Nhập môn lập trình (3 TC)"]
+        K2_CTRR["Cấu trúc rời rạc (3 TC)"]
+        K2_PHYS["Vật lý đại cương (3 TC)"]
+        K2_ENG2["Tiếng Anh 2 (3 TC)"]
     end
 
-    subgraph K3["HỌC KỲ 3"]
-        direction TB
-        K3_KTLT["Kỹ thuật lập trình<br/>(INT1102 - 3 TC)"]
-        K3_XSTK["Xác suất thống kê<br/>(3 TC)"]
-        K3_KTMT["Kiến trúc máy tính<br/>(3 TC)"]
+    subgraph K3["HỌC KỲ 3 (LẬP TRÌNH)"]
+        K3_KTLT["Kỹ thuật lập trình (3 TC)"]
+        K3_XSTK["Xác suất thống kê (3 TC)"]
+        K3_KTMT["Kiến trúc máy tính (3 TC)"]
     end
 
-    subgraph K4["HỌC KỲ 4"]
-        direction TB
-        K4_CTDL["Cấu trúc dữ liệu & GT<br/>(INT2204 - 4 TC)"]
-        K4_CSDL["Cơ sở dữ liệu<br/>(INT2201 - 3 TC)"]
-        K4_HDH["Hệ điều hành<br/>(3 TC)"]
-        K4_MMT["Mạng máy tính<br/>(3 TC)"]
+    subgraph K4["HỌC KỲ 4 (CỐT LÕI CNTT)"]
+        K4_CTDL["Cấu trúc dữ liệu & GT (4 TC)"]
+        K4_CSDL["Cơ sở dữ liệu (3 TC)"]
+        K4_HDH["Hệ điều hành (3 TC)"]
+        K4_MMT["Mạng máy tính (3 TC)"]
     end
 
-    subgraph K5["HỌC KỲ 5"]
-        direction TB
-        K5_TTNT["Trí tuệ nhân tạo<br/>(INT3301 - 3 TC)"]
-        K5_WEB["Lập trình Web<br/>(INT3306 - 3 TC)"]
-        K5_PTTK["Phân tích thiết kế HT<br/>(3 TC)"]
-        K5_ATTT["An toàn thông tin<br/>(3 TC)"]
+    subgraph K5["HỌC KỲ 5 (CHUYÊN SÂU)"]
+        K5_TTNT["Trí tuệ nhân tạo (3 TC)"]
+        K5_WEB["Lập trình Web (3 TC)"]
+        K5_PTTK["Phân tích thiết kế HT (3 TC)"]
+        K5_ATTT["An toàn thông tin (3 TC)"]
     end
 
-    subgraph K6["HỌC KỲ 6"]
-        direction TB
-        K6_HOCMAY["Học máy (Machine Learning)<br/>(INT3401 - 3 TC)"]
-        K6_NLP["Xử lý ngôn ngữ tự nhiên<br/>(3 TC)"]
-        K6_DOAN["Đồ án chuyên ngành CNTT<br/>(3 TC)"]
+    subgraph K6["HỌC KỲ 6 (ỨNG DỤNG & ĐỒ ÁN)"]
+        K6_HOCMAY["Học máy / Machine Learning (3 TC)"]
+        K6_NLP["Xử lý ngôn ngữ tự nhiên (3 TC)"]
+        K6_DOAN["Đồ án chuyên ngành CNTT (3 TC)"]
     end
 
     %% Mối quan hệ tiên quyết DAG
-    K1_GT1 -->|"Tiên quyết"| K2_GT2
-    K1_THDC -->|"Tiên quyết"| K2_NMLT
-    K1_ENG1 -->|"Tiên quyết"| K2_ENG2
+    K1_GT1 ==>|"Tiên quyết"| K2_GT2
+    K1_THDC ==>|"Tiên quyết"| K2_NMLT
+    K1_ENG1 ==>|"Tiên quyết"| K2_ENG2
 
-    K2_NMLT -->|"Tiên quyết"| K3_KTLT
-    K2_GT2 -->|"Tiên quyết"| K3_XSTK
+    K2_GT2 ==>|"Tiên quyết"| K3_XSTK
+    K2_NMLT ==>|"Tiên quyết"| K3_KTLT
 
-    K3_KTLT -->|"Tiên quyết"| K4_CTDL
-    K2_CTRR -->|"Tiên quyết"| K4_CTDL
-    K3_KTLT -->|"Tiên quyết"| K4_CSDL
-    K3_KTMT -->|"Tiên quyết"| K4_HDH
+    K3_KTLT ==>|"Tiên quyết"| K4_CTDL
+    K2_CTRR ==>|"Tiên quyết"| K4_CTDL
+    K3_KTLT ==>|"Tiên quyết"| K4_CSDL
+    K3_KTMT ==>|"Tiên quyết"| K4_HDH
 
-    K4_CTDL -->|"Tiên quyết"| K5_TTNT
-    K4_CSDL -->|"Tiên quyết"| K5_WEB
-    K4_CSDL -->|"Tiên quyết"| K5_PTTK
-    K4_MMT -->|"Tiên quyết"| K5_ATTT
+    K4_CTDL ==>|"Tiên quyết"| K5_TTNT
+    K4_CSDL ==>|"Tiên quyết"| K5_WEB
+    K4_CSDL ==>|"Tiên quyết"| K5_PTTK
+    K4_MMT ==>|"Tiên quyết"| K5_ATTT
 
-    K5_TTNT -->|"Tiên quyết"| K6_HOCMAY
-    K5_TTNT -->|"Tiên quyết"| K6_NLP
-    K5_PTTK -->|"Tiên quyết"| K6_DOAN
-    K5_WEB -->|"Tiên quyết"| K6_DOAN
+    K5_TTNT ==>|"Tiên quyết"| K6_HOCMAY
+    K5_TTNT ==>|"Tiên quyết"| K6_NLP
+    K5_PTTK ==>|"Tiên quyết"| K6_DOAN
+    K5_WEB ==>|"Tiên quyết"| K6_DOAN
 """
 
 # =============================================================================
 # 5. SƠ ĐỒ CA SỬ DỤNG HỆ THỐNG (USE CASE DIAGRAM)
 # =============================================================================
-USECASE_MERMAID = """flowchart LR
-    subgraph ACTORS["TÁC NHÂN HỆ THỐNG"]
-        direction TB
+USECASE_MERMAID = """flowchart TB
+    subgraph ACTORS["CÁC TÁC NHÂN HỆ THỐNG (ACTORS)"]
+        direction LR
         SV["🎓 Sinh viên (Student)"]
         GV["👨‍🏫 Giảng viên / Cố vấn (Teacher)"]
         AD["⚙️ Quản trị viên (Admin)"]
     end
 
-    subgraph SYSTEM["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT"]
+    subgraph SYSTEM["HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT (AIRC CHATBOT)"]
         direction TB
-        
-        subgraph UC_AUTH["Xác thực & Hồ sơ cá nhân"]
-            UC1["Đăng nhập / Đăng ký hệ thống"]
-            UC2["Quên mật khẩu / Đặt lại mật khẩu"]
-            UC3["Xem và cập nhật thông tin hồ sơ"]
+
+        subgraph ROW1["PHÂN HỆ TRUY CẬP VÀ NGHIỆP VỤ SINH VIÊN"]
+            direction LR
+            subgraph G1["1. Xác thực & Hồ sơ"]
+                direction TB
+                UC1(["Đăng nhập / Đăng ký"])
+                UC2(["Quên & Đặt lại mật khẩu"])
+                UC3(["Xem & Cập nhật hồ sơ"])
+            end
+            subgraph G2["2. Trợ lý Cố vấn Học vụ Sinh viên"]
+                direction TB
+                UC4(["Hỏi đáp quy chế & Lộ trình đào tạo"])
+                UC5(["Tra cứu môn học đủ điều kiện"])
+                UC6(["Tra cứu điểm & Môn cần học lại"])
+                UC7(["Tìm kiếm & Tải tài liệu PDF"])
+                UC8(["Tương tác giọng nói Live Voice"])
+            end
         end
 
-        subgraph UC_STUDENT["Chức năng Dành cho Sinh viên"]
-            UC4["Hỏi đáp quy chế & Lộ trình học tập"]
-            UC5["Tra cứu môn học đủ điều kiện đăng ký"]
-            UC6["Tra cứu bảng điểm cá nhân & Điểm rớt"]
-            UC7["Tìm kiếm và tải tài liệu môn học (PDF)"]
-            UC8["Tương tác thời gian thực bằng giọng nói (Live Voice)"]
-        end
-
-        subgraph UC_TEACHER["Chức năng Dành cho Giảng viên"]
-            UC9["Tra cứu tiến độ học tập sinh viên theo lớp"]
-            UC10["Xem trực quan hóa sơ đồ môn tiên quyết"]
-            UC11["Đóng góp và quản lý tài liệu học tập"]
-            UC12["Hỏi đáp trợ lý chuyên môn AI"]
-        end
-
-        subgraph UC_ADMIN["Chức năng Quản trị Hệ thống"]
-            UC13["Quản trị người dùng & Phân quyền RBAC"]
-            UC14["Quản lý danh mục 23 môn học & Đồ thị DAG"]
-            UC15["Nhập liệu & Cập nhật bảng điểm sinh viên"]
-            UC16["Quản lý kho tri thức Vector & Tệp Syllabus"]
-            UC17["Cấu hình tham số RAG Pipeline & Mô hình LLM"]
+        subgraph ROW2["PHÂN HỆ GIẢNG VIÊN VÀ QUẢN TRỊ VIÊN"]
+            direction LR
+            subgraph G3["3. Nghiệp vụ Giảng viên / Cố vấn"]
+                direction TB
+                UC9(["Xem tiến độ học tập sinh viên"])
+                UC10(["Xem trực quan sơ đồ DAG tiên quyết"])
+                UC11(["Quản lý & Đóng góp tài liệu"])
+                UC12(["Hỏi đáp trợ lý chuyên môn AI"])
+            end
+            subgraph G4["4. Nghiệp vụ Quản trị Hệ thống (Admin)"]
+                direction TB
+                UC13(["Quản trị người dùng & Phân quyền RBAC"])
+                UC14(["Quản lý 23 môn học & Cây tiên quyết"])
+                UC15(["Nhập liệu & Cập nhật bảng điểm"])
+                UC16(["Quản trị kho tri thức Vector Qdrant"])
+                UC17(["Cấu hình tham số RAG Pipeline & LLM"])
+            end
         end
     end
 
+    ACTORS ~~~ SYSTEM
+    ROW1 ~~~ ROW2
+
+    %% Liên kết Sinh viên
     SV --> UC1
     SV --> UC2
     SV --> UC3
@@ -362,6 +368,7 @@ USECASE_MERMAID = """flowchart LR
     SV --> UC7
     SV --> UC8
 
+    %% Liên kết Giảng viên
     GV --> UC1
     GV --> UC3
     GV --> UC9
@@ -369,6 +376,7 @@ USECASE_MERMAID = """flowchart LR
     GV --> UC11
     GV --> UC12
 
+    %% Liên kết Quản trị viên
     AD --> UC1
     AD --> UC3
     AD --> UC13
