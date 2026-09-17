@@ -417,6 +417,93 @@ SEQUENCE_MERMAID = """sequenceDiagram
     API->>PG: INSERT INTO chat_messages (session_id, sender_role, content)
 """
 
+# =============================================================================
+# 5B. SƠ ĐỒ CA SỬ DỤNG CHUẨN UML PLANTUML (HÌNH NGƯỜI QUE STICK FIGURES)
+# =============================================================================
+USECASE_PUML = r"""@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam dpi 200
+
+skinparam actor {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    FontSize 14
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    FontSize 13
+}
+
+skinparam rectangle {
+    BackgroundColor #FAFAFA
+    BorderColor #000000
+    FontSize 15
+    FontStyle bold
+}
+
+actor "Sinh viên\n(Student)" as SV
+
+rectangle "HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT" {
+    usecase "Đăng nhập & Xác thực" as UC_Auth
+    usecase "Hỏi đáp tư vấn học vụ" as UC_Chat
+    usecase "Giao tiếp giọng nói Live Voice" as UC_Voice
+    usecase "Tra cứu môn đủ điều kiện" as UC_Eligible
+    usecase "Xem cây tiên quyết DAG" as UC_DAG
+    usecase "Tra cứu kết quả học tập" as UC_Grade
+    usecase "Tìm kiếm & Tải tài liệu PDF" as UC_Doc
+
+    usecase "Theo dõi tiến độ học tập lớp" as UC_Class
+    usecase "Quản lý học liệu & Đóng góp" as UC_Mat
+    usecase "Hỏi đáp trợ lý chuyên môn AI" as UC_Advisor
+
+    usecase "Quản trị người dùng & RBAC" as UC_User
+    usecase "Quản lý 23 môn & Cây tiên quyết" as UC_Course
+    usecase "Nhập & Cập nhật điểm thi" as UC_GradeManage
+    usecase "Quản trị kho tri thức & LLM" as UC_RAG
+}
+
+actor "Giảng viên / Cố vấn\n(Teacher)" as GV
+actor "Quản trị viên\n(Admin)" as AD
+
+' Khóa vị trí GV ở trên và AD ở dưới bên phải
+GV -[hidden]down- AD
+
+' Quan hệ phụ thuộc UML include & extend
+UC_Chat ..> UC_Voice : <<extend>>
+UC_Chat ..> UC_Auth : <<include>>
+UC_Eligible ..> UC_DAG : <<include>>
+UC_Eligible ..> UC_Auth : <<include>>
+
+' Sinh viên (bên trái)
+SV -- UC_Chat
+SV -- UC_Eligible
+SV -- UC_Grade
+SV -- UC_Doc
+
+' Giảng viên (bên phải trên)
+UC_DAG -- GV
+UC_Class -- GV
+UC_Mat -- GV
+UC_Advisor -- GV
+
+' Quản trị viên (bên phải dưới)
+UC_User -- AD
+UC_Course -- AD
+UC_GradeManage -- AD
+UC_RAG -- AD
+@enduml
+"""
+
+# =============================================================================
+# DANH SÁCH SƠ ĐỒ ĐỒ HỌA HỆ THỐNG
+# =============================================================================
 DIAGRAMS = [
     ("so_do_erd_database", ERD_MERMAID, "Sơ đồ thực thể liên kết (ERD) Cơ sở dữ liệu PostgreSQL 15"),
     ("so_do_khoi_kien_truc", ARCHITECTURE_MERMAID, "Sơ đồ khối kiến trúc hệ thống Microservices"),
@@ -427,10 +514,10 @@ DIAGRAMS = [
 ]
 
 def generate_all_diagrams():
-    print("=== BẮT ĐẦU XUẤT VÀ RENDER SƠ ĐỒ BẰNG MERMAID ===")
+    print("=== BẮT ĐẦU XUẤT VÀ RENDER SƠ ĐỒ KỸ THUẬT ===")
     
     # 1. Tạo file DIAGRAMS.md
-    md_content = ["# TÀI LIỆU HỆ THỐNG SƠ ĐỒ KỸ THUẬT (MERMAID DIAGRAMS)\n\n",
+    md_content = ["# TÀI LIỆU HỆ THỐNG SƠ ĐỒ KỸ THUẬT\n\n",
                   "Hệ thống: **Cố vấn Học tập Khoa CNTT (IT Student Chatbot Advisor)**\n\n"]
     
     for filename, code, title in DIAGRAMS:
@@ -443,22 +530,47 @@ def generate_all_diagrams():
         print(f"[MMD] Đã lưu: {mmd_path}")
         
         # Thêm vào Markdown
-        md_content.append(f"## {title}\n\n```mermaid\n{code.strip()}\n```\n\n---\n\n")
+        md_content.append(f"## {title}\n\n```mermaid\n{code.strip()}\n```\n\n")
         
-        # Gọi mmdc render ảnh PNG
-        print(f"[RENDER] Đang render: {png_path}...")
-        cmd = [
-            "npx", "-y", "@mermaid-js/mermaid-cli",
-            "-i", mmd_path,
-            "-o", png_path,
-            "-b", "white",
-            "-s", "2.5"
-        ]
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        if res.returncode == 0:
-            print(f"   -> Thành công! Kích thước: {os.path.getsize(png_path)} bytes")
+        if filename == "so_do_usecase_he_thong":
+            # Xuất thêm mã nguồn PlantUML với hình người que (Stick Figures)
+            puml_path = os.path.join(DIAGRAMS_DIR, f"{filename}.puml")
+            with open(puml_path, "w", encoding="utf-8") as f:
+                f.write(USECASE_PUML.strip() + "\n")
+            print(f"[PUML] Đã lưu: {puml_path}")
+            md_content.append(f"### Mã nguồn PlantUML (Chuẩn hình người que Stick Figures)\n\n```plantuml\n{USECASE_PUML.strip()}\n```\n\n")
+            
+            # Render Use Case bằng PlantUML để có hình người que chuẩn UML 100%
+            print(f"[RENDER-PLANTUML] Đang render hình người que: {png_path}...")
+            cmd = f'npx -y plantuml-cli "{puml_path}" --png'
+            res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            # plantuml-cli mặc định xuất cùng thư mục file puml, di chuyển vào IMAGE_DIR
+            puml_out_png = os.path.join(DIAGRAMS_DIR, f"{filename}.png")
+            if os.path.exists(puml_out_png):
+                import shutil
+                shutil.copyfile(puml_out_png, png_path)
+                os.remove(puml_out_png)
+            if os.path.exists(png_path):
+                print(f"   -> Thành công PlantUML! Kích thước: {os.path.getsize(png_path)} bytes")
+            else:
+                print(f"   -> Fallback sang Mermaid nếu lỗi PlantUML")
         else:
-            print(f"   -> Lỗi khi render {filename}: {res.stderr}")
+            # Gọi mmdc render ảnh PNG cho các sơ đồ còn lại
+            print(f"[RENDER] Đang render: {png_path}...")
+            cmd = [
+                "npx", "-y", "@mermaid-js/mermaid-cli",
+                "-i", mmd_path,
+                "-o", png_path,
+                "-b", "white",
+                "-s", "2.5"
+            ]
+            res = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace')
+            if res.returncode == 0:
+                print(f"   -> Thành công! Kích thước: {os.path.getsize(png_path)} bytes")
+            else:
+                print(f"   -> Lỗi khi render {filename}: {res.stderr}")
+        
+        md_content.append("---\n\n")
 
     # Ghi file DIAGRAMS.md
     diag_md_path = os.path.join(PROJECT_ROOT, "DIAGRAMS.md")
@@ -470,7 +582,7 @@ def generate_all_diagrams():
     with open(report_diag_md, "w", encoding="utf-8") as f:
         f.write("".join(md_content))
 
-    print(">>> HOÀN THÀNH TẤT CẢ SƠ ĐỒ MERMAID! <<<")
+    print(">>> HOÀN THÀNH TẤT CẢ SƠ ĐỒ! <<<")
 
 if __name__ == "__main__":
     generate_all_diagrams()

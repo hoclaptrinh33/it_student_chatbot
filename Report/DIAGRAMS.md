@@ -1,4 +1,4 @@
-# TÀI LIỆU HỆ THỐNG SƠ ĐỒ KỸ THUẬT (MERMAID DIAGRAMS)
+# TÀI LIỆU HỆ THỐNG SƠ ĐỒ KỸ THUẬT
 
 Hệ thống: **Cố vấn Học tập Khoa CNTT (IT Student Chatbot Advisor)**
 
@@ -355,6 +355,90 @@ flowchart LR
     classDef ucStyle fill:#FFFFFF,stroke:#334155,stroke-width:1.5px,color:#0F172A;
     class SV,GV,AD actorStyle;
     class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14 ucStyle;
+```
+
+### Mã nguồn PlantUML (Chuẩn hình người que Stick Figures)
+
+```plantuml
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam dpi 200
+
+skinparam actor {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    FontSize 14
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    FontSize 13
+}
+
+skinparam rectangle {
+    BackgroundColor #FAFAFA
+    BorderColor #000000
+    FontSize 15
+    FontStyle bold
+}
+
+actor "Sinh viên\n(Student)" as SV
+
+rectangle "HỆ THỐNG CỐ VẤN HỌC TẬP KHOA CNTT" {
+    usecase "Đăng nhập & Xác thực" as UC_Auth
+    usecase "Hỏi đáp tư vấn học vụ" as UC_Chat
+    usecase "Giao tiếp giọng nói Live Voice" as UC_Voice
+    usecase "Tra cứu môn đủ điều kiện" as UC_Eligible
+    usecase "Xem cây tiên quyết DAG" as UC_DAG
+    usecase "Tra cứu kết quả học tập" as UC_Grade
+    usecase "Tìm kiếm & Tải tài liệu PDF" as UC_Doc
+
+    usecase "Theo dõi tiến độ học tập lớp" as UC_Class
+    usecase "Quản lý học liệu & Đóng góp" as UC_Mat
+    usecase "Hỏi đáp trợ lý chuyên môn AI" as UC_Advisor
+
+    usecase "Quản trị người dùng & RBAC" as UC_User
+    usecase "Quản lý 23 môn & Cây tiên quyết" as UC_Course
+    usecase "Nhập & Cập nhật điểm thi" as UC_GradeManage
+    usecase "Quản trị kho tri thức & LLM" as UC_RAG
+}
+
+actor "Giảng viên / Cố vấn\n(Teacher)" as GV
+actor "Quản trị viên\n(Admin)" as AD
+
+' Khóa vị trí GV ở trên và AD ở dưới bên phải
+GV -[hidden]down- AD
+
+' Quan hệ phụ thuộc UML include & extend
+UC_Chat ..> UC_Voice : <<extend>>
+UC_Chat ..> UC_Auth : <<include>>
+UC_Eligible ..> UC_DAG : <<include>>
+UC_Eligible ..> UC_Auth : <<include>>
+
+' Sinh viên (bên trái)
+SV -- UC_Chat
+SV -- UC_Eligible
+SV -- UC_Grade
+SV -- UC_Doc
+
+' Giảng viên (bên phải trên)
+UC_DAG -- GV
+UC_Class -- GV
+UC_Mat -- GV
+UC_Advisor -- GV
+
+' Quản trị viên (bên phải dưới)
+UC_User -- AD
+UC_Course -- AD
+UC_GradeManage -- AD
+UC_RAG -- AD
+@enduml
 ```
 
 ---
